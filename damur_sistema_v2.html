@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Damur Constructora — Sistema de Cobranza v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d12;--surface:#13161f;--card:#191d28;--card2:#1e2235;--border:#252a3a;
+  --accent:#c8a96e;--accent2:#e8c98a;--text:#e4e6f0;--muted:#6b7299;
+  --mora:#e05555;--mora-bg:rgba(224,85,85,0.1);--mora-border:rgba(224,85,85,0.25);
+  --aldia:#3ecf82;--aldia-bg:rgba(62,207,130,0.1);
+  --pagado:#5b8ee6;--pagado-bg:rgba(91,142,230,0.1);
+  --shadow:0 12px 48px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+
+/* NAV */
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;position:sticky;top:0;z-index:100;}
+.nav-brand{display:flex;align-items:center;gap:12px;padding:14px 0;margin-right:40px;}
+.nav-hex{width:32px;height:32px;background:var(--accent);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);}
+.nav-brand span{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:var(--accent);}
+.nav-tab{padding:18px 20px;font-size:0.82rem;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* PAGES */
+.page{display:none;padding:40px 32px 60px;max-width:1200px;margin:0 auto;}
+.page.active{display:block;}
+
+/* TITLES */
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;color:var(--accent);margin-bottom:4px;}
+.page-sub{font-size:0.8rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:32px;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:36px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 20px;position:relative;overflow:hidden;transition:transform 0.2s;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-card.s-total::before{background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.stat-card.s-mora::before{background:var(--mora);}
+.stat-card.s-aldia::before{background:var(--aldia);}
+.stat-card.s-multi::before{background:var(--pagado);}
+.stat-label{font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;letter-spacing:1px;line-height:1;}
+.stat-sub{font-size:0.72rem;color:var(--muted);margin-top:6px;}
+
+/* SECTION */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1.5px;color:var(--text);}
+.badge{border-radius:20px;padding:3px 12px;font-size:0.78rem;font-weight:600;}
+.badge-mora{background:var(--mora-bg);border:1px solid var(--mora-border);color:var(--mora);}
+.badge-pagado{background:var(--pagado-bg);border:1px solid rgba(91,142,230,0.3);color:var(--pagado);}
+
+/* TABLE */
+.data-table{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:36px;}
+.data-table table{width:100%;border-collapse:collapse;}
+.data-table th{background:var(--card2);padding:12px 14px;text-align:left;font-size:0.64rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:500;}
+.data-table td{padding:13px 14px;border-top:1px solid var(--border);font-size:0.85rem;vertical-align:middle;}
+.data-table tr:hover td{background:rgba(255,255,255,0.02);}
+.data-table .overflow{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ESTADOS */
+.tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:0.74rem;font-weight:600;}
+.tag-mora{background:var(--mora-bg);color:var(--mora);border:1px solid var(--mora-border);}
+.tag-mora .dot{width:6px;height:6px;border-radius:50%;background:var(--mora);box-shadow:0 0 5px var(--mora);}
+.tag-aldia{background:var(--aldia-bg);color:var(--aldia);border:1px solid rgba(62,207,130,0.3);}
+.tag-aldia .dot{width:6px;height:6px;border-radius:50%;background:var(--aldia);}
+.tag-pagado{background:var(--pagado-bg);color:var(--pagado);border:1px solid rgba(91,142,230,0.3);}
+.tag-pagado .dot{width:6px;height:6px;border-radius:50%;background:var(--pagado);}
+.tag-na{background:rgba(107,114,153,0.1);color:var(--muted);border:1px solid rgba(107,114,153,0.2);}
+.tag-na .dot{width:6px;height:6px;border-radius:50%;background:var(--muted);}
+
+/* BTNS */
+.btn-wa{display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:0.76rem;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.btn-wa:hover{background:#1fb855;}
+.btn-sm{display:inline-flex;align-items:center;gap:5px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 11px;font-size:0.75rem;cursor:pointer;transition:all 0.15s;margin-left:5px;}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent);}
+.btn-primary{background:var(--accent);color:#0b0d12;border:none;border-radius:8px;padding:11px 24px;font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;}
+.btn-primary:hover{background:var(--accent2);}
+
+/* BUSCADOR */
+.search-box{max-width:560px;margin-bottom:32px;}
+.search-label{display:block;font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.search-wrap{position:relative;}
+.search-wrap .ico{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+#cedula-input{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:16px 52px;font-size:1.1rem;color:var(--text);font-family:'DM Sans',sans-serif;letter-spacing:1px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+#cedula-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,169,110,0.15);}
+#cedula-input::placeholder{color:var(--muted);}
+.clear-btn{position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;display:none;}
+.clear-btn:hover{color:var(--text);}
+#search-result{animation:fadeUp 0.3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* CLIENT CARD */
+.client-card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:24px;}
+.card-header{background:linear-gradient(135deg,#161b2c,#1e2440);padding:22px 26px 18px;border-bottom:1px solid var(--border);position:relative;}
+.card-header::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent));}
+.card-header.mora-header::before{background:linear-gradient(90deg,var(--mora),#ff6b35,var(--mora));}
+.client-name{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1.5px;line-height:1.2;margin-bottom:6px;}
+.cotit-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(200,169,110,0.1);border:1px solid rgba(200,169,110,0.25);border-radius:20px;padding:3px 10px;font-size:0.7rem;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-top:4px;}
+
+/* APT BLOCK */
+.apt-block{border-top:1px solid var(--border);}
+.apt-block+.apt-block{border-top:2px solid var(--accent);}
+.apt-label{background:var(--card2);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;}
+.apt-label-left{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1.5px;color:var(--accent2);}
+.apt-label-right{font-size:0.78rem;color:var(--muted);}
+.field-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;}
+.field{padding:14px 20px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);}
+.field:nth-child(3n){border-right:none;}
+.field-label{font-size:0.64rem;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.field-value{font-size:0.95rem;font-weight:500;}
+.field-value.money{font-weight:600;color:var(--accent2);}
+.field-value.money.red{color:var(--mora);}
+.field-value.money.green{color:var(--aldia);}
+.field-value.na{color:var(--muted);font-style:italic;font-size:0.85rem;}
+.field.full2{grid-column:1/3;border-right:1px solid var(--border);}
+.field.full3{grid-column:1/-1;border-right:none;}
+
+/* MORA SECTION */
+.mora-section{background:rgba(224,85,85,0.04);border-top:1px solid var(--mora-border);}
+.mora-section-title{display:flex;align-items:center;gap:8px;padding:12px 22px 8px;font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--mora);font-weight:600;}
+.mora-table-wrap{overflow-x:auto;}
+.mora-table-inner{width:100%;border-collapse:collapse;}
+.mora-table-inner th{padding:9px 14px;text-align:left;font-size:0.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);background:rgba(224,85,85,0.06);}
+.mora-table-inner td{padding:10px 14px;border-top:1px solid rgba(224,85,85,0.1);font-size:0.82rem;}
+.mora-total-row{background:rgba(224,85,85,0.08);padding:12px 22px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--mora-border);}
+.mora-total-label{font-size:0.75rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--mora);font-weight:600;}
+.mora-total-val{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;color:var(--mora);}
+.card-actions{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;}
+
+/* MENSAJES */
+.msg-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
+.msg-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.msg-card-title{display:flex;align-items:center;gap:8px;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;font-weight:600;}
+.msg-body{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:0.86rem;line-height:1.65;white-space:pre-wrap;}
+.msg-actions{display:flex;gap:8px;margin-top:12px;}
+.btn-copy{display:inline-flex;align-items:center;gap:5px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 13px;font-size:0.77rem;cursor:pointer;transition:all 0.15s;}
+.btn-copy:hover{border-color:var(--accent);color:var(--accent);}
+.btn-copy.copied{border-color:var(--aldia);color:var(--aldia);}
+
+.personalizer{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:28px;}
+.personalizer h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1.5px;color:var(--text);margin-bottom:16px;}
+.p-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.p-field label{display:block;font-size:0.67rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.p-field input,.p-field select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;}
+.p-field input:focus,.p-field select:focus{border-color:var(--accent);}
+.gen-result{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;font-size:0.88rem;line-height:1.7;white-space:pre-wrap;display:none;}
+.gen-actions{display:flex;gap:10px;margin-top:12px;display:none;}
+
+/* GESTIONES */
+.gest-form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px;}
+.gest-form h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1.5px;color:var(--text);margin-bottom:16px;}
+.g-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.g-field label{display:block;font-size:0.67rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.g-field input,.g-field select,.g-field textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.87rem;outline:none;resize:vertical;}
+.g-field input:focus,.g-field select:focus,.g-field textarea:focus{border-color:var(--accent);}
+.g-field.full{grid-column:1/-1;}
+.canal-badge{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 9px;font-size:0.72rem;font-weight:600;}
+.canal-wa{background:rgba(37,211,102,0.1);color:#25D366;border:1px solid rgba(37,211,102,0.25);}
+.canal-call{background:var(--pagado-bg);color:var(--pagado);border:1px solid rgba(91,142,230,0.25);}
+.canal-email{background:rgba(200,169,110,0.1);color:var(--accent);border:1px solid rgba(200,169,110,0.25);}
+.canal-visita{background:var(--mora-bg);color:var(--mora);border:1px solid var(--mora-border);}
+.resp-si{color:var(--aldia);font-weight:600;}
+.resp-no{color:var(--mora);font-weight:600;}
+.resp-pend{color:#ff8c42;font-weight:600;}
+.btn-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:4px;}
+.btn-del:hover{color:var(--mora);background:var(--mora-bg);}
+
+/* PROTOCOLO */
+.proto-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.proto-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px;max-width:520px;width:90%;position:relative;animation:fadeUp 0.2s ease;}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;}
+.modal-close:hover{color:var(--text);}
+.modal h3{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:1.5px;color:var(--accent);margin-bottom:4px;}
+.modal-sub{font-size:0.78rem;color:var(--muted);margin-bottom:18px;}
+.modal-msg{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:0.88rem;line-height:1.7;white-space:pre-wrap;margin-bottom:16px;}
+.modal-actions{display:flex;gap:10px;flex-wrap:wrap;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  nav{padding:0 16px;overflow-x:auto;}
+  .page{padding:24px 16px 40px;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .field-grid{grid-template-columns:1fr 1fr;}
+  .field:nth-child(2n){border-right:none;}
+  .field:nth-child(3n){border-right:1px solid var(--border);}
+  .msg-grid,.p-fields,.g-fields{grid-template-columns:1fr;}
+  .proto-grid{grid-template-columns:1fr 1fr;}
+  .data-table{overflow-x:auto;}
+  .data-table table{min-width:700px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand"><div class="nav-hex"></div><span>DAMUR</span></div>
+  <div class="nav-tab active" onclick="showPage('dashboard',this)">📊 Dashboard</div>
+  <div class="nav-tab" onclick="showPage('buscador',this)">🔍 Buscador</div>
+  <div class="nav-tab" onclick="showPage('mensajes',this)">💬 Mensajes</div>
+  <div class="nav-tab" onclick="showPage('gestiones',this)">📋 Gestiones</div>
+</nav>
+
+<!-- ── DASHBOARD ── -->
+<div class="page active" id="page-dashboard">
+  <div class="page-title">Panel de Cobranza</div>
+  <div class="page-sub">Resumen general · Actualizado con archivo más reciente</div>
+
+  <div class="stats-grid">
+    <div class="stat-card s-total">
+      <div class="stat-label">Total Clientes</div>
+      <div class="stat-num" style="color:var(--accent)">244</div>
+      <div class="stat-sub">Cédulas registradas</div>
+    </div>
+    <div class="stat-card s-mora">
+      <div class="stat-label">En Mora</div>
+      <div class="stat-num" style="color:var(--mora)" id="dash-mora-count">—</div>
+      <div class="stat-sub">Requieren gestión urgente</div>
+    </div>
+    <div class="stat-card s-aldia">
+      <div class="stat-label">Al Día</div>
+      <div class="stat-num" style="color:var(--aldia)" id="dash-aldia-count">—</div>
+      <div class="stat-sub">Clientes al corriente</div>
+    </div>
+    <div class="stat-card s-multi">
+      <div class="stat-label">Multi-Apto</div>
+      <div class="stat-num" style="color:var(--pagado)">8</div>
+      <div class="stat-sub">Clientes con 2+ aptos</div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">🔴 Clientes en Mora</div>
+    <span class="badge badge-mora" id="dash-mora-badge">cargando…</span>
+  </div>
+  <div class="data-table">
+    <table>
+      <thead><tr>
+        <th>Cliente</th><th>Apt</th><th>Proyecto</th><th>Plan</th>
+        <th>Valor Cuota</th><th>Valor Pagado</th><th>Saldo Apartamento</th><th>Total a Cancelar</th><th>Acciones</th>
+      </tr></thead>
+      <tbody id="mora-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="section-head" style="margin-top:8px">
+    <div class="section-title">📅 Protocolo de Cobro</div>
+  </div>
+  <div class="proto-grid">
+    <div class="proto-card"><div style="font-size:1.4rem;margin-bottom:8px">📱</div><div style="font-size:0.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;font-weight:600">Día 1</div><div style="font-size:0.84rem">WhatsApp recordatorio amable a todos los clientes</div></div>
+    <div class="proto-card"><div style="font-size:1.4rem;margin-bottom:8px">📞</div><div style="font-size:0.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;font-weight:600">Día 5</div><div style="font-size:0.84rem">Sin pago → llamada telefónica directa al cliente</div></div>
+    <div class="proto-card"><div style="font-size:1.4rem;margin-bottom:8px">✉️</div><div style="font-size:0.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;font-weight:600">Día 10</div><div style="font-size:0.84rem">Carta formal / correo con saldo actualizado</div></div>
+    <div class="proto-card"><div style="font-size:1.4rem;margin-bottom:8px">⚖️</div><div style="font-size:0.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--mora);margin-bottom:6px;font-weight:600">Día 15+</div><div style="font-size:0.84rem">Acuerdo de pago o gestión jurídica</div></div>
+  </div>
+</div>
+
+<!-- ── BUSCADOR ── -->
+<div class="page" id="page-buscador">
+  <div class="page-title">Buscador de Clientes</div>
+  <div class="page-sub">Ingresa la cédula — muestra todos los apartamentos del cliente</div>
+  <div class="search-box">
+    <label class="search-label" for="cedula-input">Número de Cédula</label>
+    <div class="search-wrap">
+      <svg class="ico" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" id="cedula-input" placeholder="Ej: 1088002618" autocomplete="off">
+      <button class="clear-btn" id="clear-btn">✕</button>
+    </div>
+  </div>
+  <div id="search-result"></div>
+</div>
+
+<!-- ── MENSAJES ── -->
+<div class="page" id="page-mensajes">
+  <div class="page-title">Generador de Mensajes</div>
+  <div class="page-sub">Genera mensajes personalizados de cobranza</div>
+
+  <div class="personalizer">
+    <h3>Generar Mensaje Personalizado</h3>
+    <div class="p-fields">
+      <div class="p-field"><label>Cédula del Cliente</label><input type="text" id="msg-cedula" placeholder="Ej: 1088002618" oninput="autoFillMsg()"></div>
+      <div class="p-field"><label>Fecha de Vencimiento</label><input type="date" id="msg-fecha"></div>
+      <div class="p-field"><label>Tipo de Mensaje</label>
+        <select id="msg-tipo">
+          <option value="recordatorio">📱 Recordatorio previo</option>
+          <option value="vencimiento">⚠️ Día del vencimiento</option>
+          <option value="mora">🔴 Aviso de mora</option>
+          <option value="acuerdo">🤝 Propuesta de acuerdo</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="generateMsg()">✨ Generar Mensaje</button>
+    <div class="gen-result" id="gen-result"></div>
+    <div class="gen-actions" id="gen-actions">
+      <button class="btn-wa" onclick="sendWA()"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>Enviar WhatsApp</button>
+      <button class="btn-copy" id="btn-copy-gen" onclick="copyGen()">📋 Copiar</button>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="section-title">📄 Plantillas Base</div></div>
+  <div class="msg-grid">
+    <div class="msg-card">
+      <div class="msg-card-title">📱 Recordatorio Previo</div>
+      <div class="msg-body">Hola [NOMBRE] 👋
+
+Le recordamos que su cuota del apartamento [APT] — [PROYECTO] vence el [FECHA].
+
+💰 Valor: $[CUOTA]
+
+Gracias por su puntualidad.
+🏗️ Damur Constructora</div>
+      <div class="msg-actions"><button class="btn-copy" onclick="copyPlantilla(this)">📋 Copiar</button></div>
+    </div>
+    <div class="msg-card">
+      <div class="msg-card-title">⚠️ Día del Vencimiento</div>
+      <div class="msg-body">Hola [NOMBRE] ⚠️
+
+Hoy vence su cuota del apartamento [APT] — [PROYECTO].
+
+💰 Valor: $[CUOTA]
+
+Después del vencimiento aplica tasa moratoria. Evite cobros adicionales pagando hoy.
+
+🏗️ Damur Constructora</div>
+      <div class="msg-actions"><button class="btn-copy" onclick="copyPlantilla(this)">📋 Copiar</button></div>
+    </div>
+    <div class="msg-card">
+      <div class="msg-card-title">🔴 Aviso de Mora</div>
+      <div class="msg-body">Estimado(a) [NOMBRE],
+
+Su cuenta del apartamento [APT] — [PROYECTO] presenta un saldo vencido de $[TOTAL_MORA].
+
+⚠️ Incluye: cuotas pendientes + intereses + gastos administrativos.
+
+Comuníquese con nosotros a la brevedad.
+📞 Damur Constructora</div>
+      <div class="msg-actions"><button class="btn-copy" onclick="copyPlantilla(this)">📋 Copiar</button></div>
+    </div>
+    <div class="msg-card">
+      <div class="msg-card-title">🤝 Propuesta de Acuerdo</div>
+      <div class="msg-body">Estimado(a) [NOMBRE],
+
+Entendemos que pueden presentarse dificultades. Queremos ofrecerle la posibilidad de un acuerdo de pago para el apartamento [APT].
+
+📅 Fecha de pago
+💳 Forma de pago
+📋 Plan de abono
+
+Contáctenos para coordinar.
+🏗️ Damur Constructora</div>
+      <div class="msg-actions"><button class="btn-copy" onclick="copyPlantilla(this)">📋 Copiar</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── GESTIONES ── -->
+<div class="page" id="page-gestiones">
+  <div class="page-title">Registro de Gestiones</div>
+  <div class="page-sub">Historial de contactos de cobranza</div>
+
+  <div class="gest-form">
+    <h3>Registrar Nueva Gestión</h3>
+    <div class="g-fields">
+      <div class="g-field"><label>Cédula del Cliente</label><input type="text" id="g-cedula" placeholder="Ej: 1088002618" oninput="autoFillGest()"></div>
+      <div class="g-field"><label>Cliente</label><input type="text" id="g-nombre" readonly style="opacity:0.7"></div>
+      <div class="g-field"><label>Apartamento</label><input type="text" id="g-apt" readonly style="opacity:0.7"></div>
+      <div class="g-field"><label>Fecha</label><input type="date" id="g-fecha"></div>
+      <div class="g-field"><label>Canal</label>
+        <select id="g-canal">
+          <option value="whatsapp">📱 WhatsApp</option>
+          <option value="llamada">📞 Llamada</option>
+          <option value="email">✉️ Correo</option>
+          <option value="visita">🏠 Visita</option>
+        </select>
+      </div>
+      <div class="g-field"><label>¿Respondió?</label>
+        <select id="g-respuesta">
+          <option value="si">✅ Sí</option>
+          <option value="no">❌ No</option>
+          <option value="pendiente">⏳ Pendiente</option>
+        </select>
+      </div>
+      <div class="g-field"><label>Fecha Prometida de Pago</label><input type="date" id="g-fecha-pago"></div>
+      <div class="g-field"><label>¿Cumplió?</label>
+        <select id="g-cumplio">
+          <option value="-">— Sin confirmar</option>
+          <option value="si">✅ Sí pagó</option>
+          <option value="no">❌ No pagó</option>
+        </select>
+      </div>
+      <div class="g-field"><label>Proyecto</label><input type="text" id="g-proyecto" readonly style="opacity:0.7"></div>
+      <div class="g-field full"><label>Observaciones</label><textarea id="g-obs" rows="2" placeholder="Ej: Cliente promete pagar el viernes..."></textarea></div>
+    </div>
+    <button class="btn-primary" onclick="saveGestion()">💾 Guardar Gestión</button>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">📋 Historial</div>
+    <button class="btn-copy" onclick="exportGestiones()" style="font-size:0.74rem">📥 Exportar CSV</button>
+  </div>
+  <div class="data-table">
+    <table>
+      <thead><tr><th>Fecha</th><th>Cliente</th><th>Apt</th><th>Canal</th><th>Respondió</th><th>Pago Prom.</th><th>Cumplió</th><th>Observaciones</th><th></th></tr></thead>
+      <tbody id="gest-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 id="modal-title">Mensaje</h3>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-msg" id="modal-msg"></div>
+    <div class="modal-actions">
+      <button class="btn-wa" id="modal-wa-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>Abrir WhatsApp</button>
+      <button class="btn-copy" id="modal-copy-btn">📋 Copiar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════ DATA ═══════════
+const DATA = {"42015790": [{"apt": "202", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 7026643.0, "valor_pagado": 182408500, "saldo_apartamento": -216701200, "estado": "Al Dia", "nombres": ["MARTA YANET LOAIZA PERALTA"], "cedulas": ["42015790"], "mora_detail": [], "total_cancelar_mora": null}], "DNI 41491850B": [{"apt": "203", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 4980000, "valor_pagado": 156000000, "saldo_apartamento": 104000000, "estado": "PENDIENTE REESTRUCTURACION", "nombres": ["Eduardo Rodr\u00edguez Puigr\u00f3s", "Fabian Andr\u00e9s Valencia Hern\u00e1ndez"], "cedulas": ["DNI 41491850B", "4414049"], "mora_detail": [], "total_cancelar_mora": null}], "4414049": [{"apt": "203", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 4980000, "valor_pagado": 156000000, "saldo_apartamento": 104000000, "estado": "PENDIENTE REESTRUCTURACION", "nombres": ["Eduardo Rodr\u00edguez Puigr\u00f3s", "Fabian Andr\u00e9s Valencia Hern\u00e1ndez"], "cedulas": ["DNI 41491850B", "4414049"], "mora_detail": [], "total_cancelar_mora": null}], "10020970": [{"apt": "205", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 1475000, "valor_pagado": 122000000, "saldo_apartamento": 53000000, "estado": "Al Dia", "nombres": ["NORBEY ANTONIO GAVIRIA ACEVEDO"], "cedulas": ["10020970"], "mora_detail": [], "total_cancelar_mora": null}, {"apt": "1809", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 8076923, "valor_pagado": 51153846, "saldo_apartamento": 298846154, "estado": "Al Dia", "nombres": ["NORBEY ANTONIO GAVIRIA ACEVEDO"], "cedulas": ["10020970"], "mora_detail": [], "total_cancelar_mora": null}, {"apt": "2006", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": null, "valor_pagado": 135148435, "saldo_apartamento": 250740065, "estado": "PAGADO AL 35%", "nombres": ["NORBEY ANTONIO GAVIRIA ACEVEDO"], "cedulas": ["10020970"], "mora_detail": [], "total_cancelar_mora": null}], "1085269118": [{"apt": "208", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": null, "valor_pagado": 120748182, "saldo_apartamento": 158151818, "estado": "PAGADO - 35%", "nombres": ["MARIO FERNANDO BUCHELI CHAVEZ"], "cedulas": ["1085269118"], "mora_detail": [], "total_cancelar_mora": null}], "1088333974": [{"apt": "207", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1150888, "valor_pagado": 59100094, "saldo_apartamento": 136147906, "estado": "PAGADO - 35%", "nombres": ["MARIA DAHIANA BRAVO ALVAREZ"], "cedulas": ["1088333974"], "mora_detail": [], "total_cancelar_mora": null}], "18503363": [{"apt": "209", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 7583339, "valor_pagado": 21000000, "saldo_apartamento": 376801200, "estado": "Al Dia", "nombres": ["HERNANDO IDARRAGA VALENCIA"], "cedulas": ["18503363"], "mora_detail": [], "total_cancelar_mora": null}, {"apt": "509", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 21000000, "valor_pagado": 21000000, "saldo_apartamento": 228152111, "estado": "Al Dia", "nombres": ["HERNANDO IDARRAGA VALENCIA"], "cedulas": ["18503363"], "mora_detail": [], "total_cancelar_mora": null}], "24346419": [{"apt": "303", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": null, "valor_pagado": 76773547, "saldo_apartamento": 199386453, "estado": "Al Dia", "nombres": ["LAURA MARCELA MONTOYA ARIAS"], "cedulas": ["24346419"], "mora_detail": [], "total_cancelar_mora": null}], "1140840904": [{"apt": "304", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3706045, "valor_pagado": 122181350, "saldo_apartamento": 285089850, "estado": "PAGADO AL 35%", "nombres": ["KENIA MARCELA RICARDO ARRIETA", "DAVID ALEJANDRO TELLO SALAZAR"], "cedulas": ["1140840904", "1684990"], "mora_detail": [], "total_cancelar_mora": null}], "1684990": [{"apt": "304", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3706045, "valor_pagado": 122181350, "saldo_apartamento": 285089850, "estado": "PAGADO AL 35%", "nombres": ["KENIA MARCELA RICARDO ARRIETA", "DAVID ALEJANDRO TELLO SALAZAR"], "cedulas": ["1140840904", "1684990"], "mora_detail": [], "total_cancelar_mora": null}], "1088272952": [{"apt": "305", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1418871, "valor_pagado": 47572490, "saldo_apartamento": 109527510, "estado": "En mora", "nombres": ["MARINA ALBA GONZALEZ TAFUR", "JUAN PABLO SALAZAR LOPEZ"], "cedulas": ["1088272952", "1088270679"], "mora_detail": [], "total_cancelar_mora": null}], "1088270679": [{"apt": "305", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1418871, "valor_pagado": 47572490, "saldo_apartamento": 109527510, "estado": "En mora", "nombres": ["MARINA ALBA GONZALEZ TAFUR", "JUAN PABLO SALAZAR LOPEZ"], "cedulas": ["1088272952", "1088270679"], "mora_detail": [], "total_cancelar_mora": null}], "42084532": [{"apt": "306", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4477073, "valor_pagado": 470760999.4, "saldo_apartamento": -29999999.4, "estado": "PAGADO AL 100%", "nombres": ["LUZ MARINA QUINTERO HERRERA"], "cedulas": ["42084532"], "mora_detail": [], "total_cancelar_mora": null}, {"apt": "509", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 217561000, "valor_pagado": 5000000, "saldo_apartamento": 217561000, "estado": "Al Dia", "nombres": ["LUZ MARINA QUINTERO HERRERA"], "cedulas": ["42084532"], "mora_detail": [], "total_cancelar_mora": null}], "42160317": [{"apt": "307", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 3528407, "valor_pagado": 181375142, "saldo_apartamento": 77624858, "estado": "N/A", "nombres": ["ELIANA LUCIA BERNAL CORREA", "VALENTINA BERNAL CORREA", "ALBA LUCIA CORREA OBANDO"], "cedulas": ["42160317", "34066171", "34053140"], "mora_detail": [], "total_cancelar_mora": null}, {"apt": "308", "proyecto": "SUNSET TOWER", "plan": "N/A", "valor_apt": null, "valor_cuota": null, "valor_pagado": null, "saldo_apartamento": null, "estado": "N/A", "nombres": ["ELIANA LUCIA BERNAL CORREA"], "cedulas": ["42160317"], "mora_detail": [], "total_cancelar_mora": null}], "34066171": [{"apt": "307", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 3528407, "valor_pagado": 181375142, "saldo_apartamento": 77624858, "estado": "N/A", "nombres": ["ELIANA LUCIA BERNAL CORREA", "VALENTINA BERNAL CORREA", "ALBA LUCIA CORREA OBANDO"], "cedulas": ["42160317", "34066171", "34053140"], "mora_detail": [], "total_cancelar_mora": null}], "34053140": [{"apt": "307", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 3528407, "valor_pagado": 181375142, "saldo_apartamento": 77624858, "estado": "N/A", "nombres": ["ELIANA LUCIA BERNAL CORREA", "VALENTINA BERNAL CORREA", "ALBA LUCIA CORREA OBANDO"], "cedulas": ["42160317", "34066171", "34053140"], "mora_detail": [], "total_cancelar_mora": null}], "1010172936": [{"apt": "309", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1243088, "valor_pagado": 72300000, "saldo_apartamento": null, "estado": "PAGADO AL 35%", "nombres": ["FABIAN HUMBERTO CASTILLO RUIZ"], "cedulas": ["1010172936"], "mora_detail": [], "total_cancelar_mora": null}], "1087008270": [{"apt": "403", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2377778, "valor_pagado": 96885800, "saldo_apartamento": 179114200, "estado": "PAGADO 35%", "nombres": ["SANTIAGO TONGUINO MEZA"], "cedulas": ["1087008270"], "mora_detail": [], "total_cancelar_mora": null}], "1089720134": [{"apt": "404", "proyecto": "SUNSET TOWER", "plan": "N/A", "valor_apt": null, "valor_cuota": null, "valor_pagado": null, "saldo_apartamento": null, "estado": "N/A", "nombres": ["SARA ESTEFANIA GRAJALES GUAPACHA"], "cedulas": ["1089720134"], "mora_detail": [], "total_cancelar_mora": null}], "30403158": [{"apt": "405 - HIPOTECARIO", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": 1899826, "valor_pagado": 12568538, "saldo_apartamento": 174838272, "estado": "En mora", "nombres": ["MARIA COLOMBIA ORTIZ GAVIRIA"], "cedulas": ["30403158"], "mora_detail": [], "total_cancelar_mora": null}], "9695852": [{"apt": "406", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3905223, "valor_pagado": 143777587, "saldo_apartamento": -267015513, "estado": "PAGADO AL 35%", "nombres": ["HECTOR MARIO ARENAS BOLIVAR"], "cedulas": ["9695852"], "mora_detail": [], "total_cancelar_mora": null}], "18524007": [{"apt": "407", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 1961080, "valor_pagado": 78003413, "saldo_apartamento": -61787613, "estado": "Al Dia", "nombres": ["JAVIER ANDRES AGUDELO VILLADA"], "cedulas": ["18524007"], "mora_detail": [], "total_cancelar_mora": null}], "108837567": [{"apt": "409", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 7614247, "valor_pagado": 21000000, "saldo_apartamento": 377801200, "estado": "Al Dia", "nombres": ["LAURA CARDENAS MEJIA"], "cedulas": ["108837567"], "mora_detail": [], "total_cancelar_mora": null}], "18600962": [{"apt": "408", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 190000000, "valor_pagado": 190000000, "saldo_apartamento": 102682650, "estado": "N/A", "nombres": ["EDWIN LEANDRO GOMEZ HOYOS"], "cedulas": ["18600962"], "mora_detail": [], "total_cancelar_mora": null}], "12022524": [{"apt": "501", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 4444829, "valor_pagado": 157701982.5, "saldo_apartamento": 262501917.5, "estado": "PAGADO AL 35%", "nombres": ["LUIS CARLOS CABRERA"], "cedulas": ["12022524"], "mora_detail": [], "total_cancelar_mora": null}], "1088299295": [{"apt": "502", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": 4828377, "valor_pagado": 43035099, "saldo_apartamento": 395909701, "estado": "Al Dia", "nombres": ["DIANA MARCELA MONCADA MEDINA"], "cedulas": ["1088299295"], "mora_detail": [], "total_cancelar_mora": null}], "25172577": [{"apt": "503", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": 3698712, "valor_pagado": 32617665, "saldo_apartamento": 314382335, "estado": "Al Dia", "nombres": ["CLAUDIA MARITZA ARIAS RIOS", "DIEGO ALEJANDRO MAZUERA ROLDAN"], "cedulas": ["25172577", "10025833"], "mora_detail": [], "total_cancelar_mora": null}], "10025833": [{"apt": "503", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": 3698712, "valor_pagado": 32617665, "saldo_apartamento": 314382335, "estado": "Al Dia", "nombres": ["CLAUDIA MARITZA ARIAS RIOS", "DIEGO ALEJANDRO MAZUERA ROLDAN"], "cedulas": ["25172577", "10025833"], "mora_detail": [], "total_cancelar_mora": null}], "42115366": [{"apt": "504", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6090235, "valor_pagado": 248719340, "saldo_apartamento": 88698460, "estado": "Al Dia", "nombres": ["MONICA MONTOYA CUADROS", "REYNALDO RODRIGUEZ"], "cedulas": ["42115366", "A61648178"], "mora_detail": [], "total_cancelar_mora": null}], "A61648178": [{"apt": "504", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6090235, "valor_pagado": 248719340, "saldo_apartamento": 88698460, "estado": "Al Dia", "nombres": ["MONICA MONTOYA CUADROS", "REYNALDO RODRIGUEZ"], "cedulas": ["42115366", "A61648178"], "mora_detail": [], "total_cancelar_mora": null}], "1053789759": [{"apt": "505", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 2806950, "valor_pagado": 137314800, "saldo_apartamento": 14032700, "estado": "En mora", "nombres": ["JUAN SEBASTIAN RESTREPO OSPINA"], "cedulas": ["1053789759"], "mora_detail": [], "total_cancelar_mora": null}], "42113855": [{"apt": "506", "proyecto": "SUNSET TOWER", "plan": "N/A", "valor_apt": null, "valor_cuota": null, "valor_pagado": null, "saldo_apartamento": null, "estado": "N/A", "nombres": ["LUZ ADRIANA ARIAS CARDONA"], "cedulas": ["42113855"], "mora_detail": [], "total_cancelar_mora": null}], "42782655": [{"apt": "507", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 2145013, "valor_pagado": 73640416, "saldo_apartamento": 136760784, "estado": "Al Dia", "nombres": ["BEATRIZ ELENA GUTIERREZ OSPINA"], "cedulas": ["42782655"], "mora_detail": [], "total_cancelar_mora": null}, {"apt": "607", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2164701, "valor_pagado": 74270432, "saldo_apartamento": 137930768, "estado": "PAGADO AL 35%", "nombres": ["BEATRIZ ELENA GUTIERREZ OSPINA"], "cedulas": ["42782655"], "mora_detail": [], "total_cancelar_mora": null}], "1088002618": [{"apt": "508", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4900000, "valor_pagado": 71430351, "saldo_apartamento": 378127649, "estado": "En mora", "nombres": ["JULIAN ANDRES MU\u00d1OZ CARMONA"], "cedulas": ["1088002618"], "mora_detail": [{"intereses": 259589.9178, "gastos": 490000, "valor_cancelar": 5649589.918, "tasa": 0.0006306849315068493, "dias": 84, "cuota": 4900000, "fecha_venc": "30/01/2026"}, {"intereses": 171520.137, "gastos": 343000, "valor_cancelar": 5414520.137, "tasa": 0.0006364383561643836, "dias": 55, "cuota": 4900000, "fecha_venc": "28/02/2026"}, {"intereses": 78936.9863, "gastos": 245000, "valor_cancelar": 5223936.986, "tasa": 0.0006443835616438356, "dias": 25, "cuota": 4900000, "fecha_venc": "30/03/2026"}], "total_cancelar_mora": 16288047.04}], "42165211": [{"apt": "601", "proyecto": "SUNSET TOWET", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": 4074439, "valor_pagado": 100230923, "saldo_apartamento": 371080977, "estado": "Al Dia", "nombres": ["FRANCY YULIET LOPEZ OSPINA"], "cedulas": ["42165211"], "mora_detail": [], "total_cancelar_mora": null}], "10028752": [{"apt": "602", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6413559, "valor_pagado": 243642151, "saldo_apartamento": -230574151, "estado": "En mora", "nombres": ["JOSE GILDARDO SANDOVAL ISAZA"], "cedulas": ["10028752"], "mora_detail": [{"intereses": 24269.61011, "gastos": 320677.95, "valor_cancelar": 6758506.56, "tasa": 0.0006306849315068493, "dias": 6, "cuota": 6413559, "fecha_venc": "18/04/2026"}], "total_cancelar_mora": null}], "94537596": [{"apt": "604", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 8319114, "valor_pagado": 21000000, "saldo_apartamento": 400850000, "estado": "Al Dia", "nombres": ["CARLOS EDUARDO VILLEGAS RIVERA", "JULIANA CADAVID PINEDA"], "cedulas": ["94537596", "1087995239"], "mora_detail": [], "total_cancelar_mora": null}], "1087995239": [{"apt": "604", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 8319114, "valor_pagado": 21000000, "saldo_apartamento": 400850000, "estado": "Al Dia", "nombres": ["CARLOS EDUARDO VILLEGAS RIVERA", "JULIANA CADAVID PINEDA"], "cedulas": ["94537596", "1087995239"], "mora_detail": [], "total_cancelar_mora": null}], "24943681": [{"apt": "608", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": null, "valor_pagado": 154665000, "saldo_apartamento": 287235000, "estado": "PAGADO AL 35%", "nombres": ["AMANDA GUEVARA BAQUERO"], "cedulas": ["24943681"], "mora_detail": [], "total_cancelar_mora": null}], "51740370": [{"apt": "609", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1894000, "valor_pagado": 102502000, "saldo_apartamento": 107498000, "estado": "PAGADO AL 35%", "nombres": ["GLORIA ESTELA SIERRA HENAO"], "cedulas": ["51740370"], "mora_detail": [], "total_cancelar_mora": null}], "1022388809": [{"apt": "701", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 8572500, "valor_pagado": 21000000, "saldo_apartamento": 449050000, "estado": "Al Dia", "nombres": ["MILTON ANDRES BECERRA ALVAREZ"], "cedulas": ["1022388809"], "mora_detail": [], "total_cancelar_mora": null}], "42008288": [{"apt": "702", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3299227, "valor_pagado": 148886086, "saldo_apartamento": 276469614, "estado": "PAGADO AL 35%", "nombres": ["MARIA ISABEL CASTA\u00d1EDA OCHOA"], "cedulas": ["42008288"], "mora_detail": [], "total_cancelar_mora": null}], "1061369984": [{"apt": "704", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3597338, "valor_pagado": 125643896, "saldo_apartamento": 7665609, "estado": "En mora", "nombres": ["ANGELA MARIA TABORDA CASTRILLON"], "cedulas": ["1061369984"], "mora_detail": [], "total_cancelar_mora": null}], "42102461": [{"apt": "706", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 9369513.0, "valor_pagado": 186349071, "saldo_apartamento": 305687229, "estado": "En mora", "nombres": ["MARIBEL ZULIMA MARULANDA"], "cedulas": ["42102461"], "mora_detail": [], "total_cancelar_mora": 29083823.16}], "42150135": [{"apt": "708", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2146029, "valor_pagado": 99086517, "saldo_apartamento": 180813483, "estado": "PAGADO AL 35%", "nombres": ["TATIANA DEL PILAR ARIZA VAZQUES"], "cedulas": ["42150135"], "mora_detail": [], "total_cancelar_mora": null}], "1039459091": [{"apt": "802", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6963610, "valor_pagado": 149734495, "saldo_apartamento": 277221205, "estado": "En mora", "nombres": ["DANIELA FRANCO D\u00c1VILA", "HECTOR FABIO CONTRERAS ACEVEDO"], "cedulas": ["1039459091", "1088018692"], "mora_detail": [{"intereses": 155116.7975, "gastos": 487452.7, "valor_cancelar": 7606179.498, "tasa": 0.0006364383561643836, "dias": 35, "cuota": 6963610, "fecha_venc": "20/03/2026"}, {"intereses": 17948.94325, "gastos": 348180.5, "valor_cancelar": 7329739.443, "tasa": 0.0006443835616438356, "dias": 4, "cuota": 6963610, "fecha_venc": "20/04/2026"}], "total_cancelar_mora": 14935918.94}], "1088018692": [{"apt": "802", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6963610, "valor_pagado": 149734495, "saldo_apartamento": 277221205, "estado": "En mora", "nombres": ["DANIELA FRANCO D\u00c1VILA", "HECTOR FABIO CONTRERAS ACEVEDO"], "cedulas": ["1039459091", "1088018692"], "mora_detail": [{"intereses": 155116.7975, "gastos": 487452.7, "valor_cancelar": 7606179.498, "tasa": 0.0006364383561643836, "dias": 35, "cuota": 6963610, "fecha_venc": "20/03/2026"}, {"intereses": 17948.94325, "gastos": 348180.5, "valor_cancelar": 7329739.443, "tasa": 0.0006443835616438356, "dias": 4, "cuota": 6963610, "fecha_venc": "20/04/2026"}], "total_cancelar_mora": 14935918.94}], "57713439": [{"apt": "803", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2713088, "valor_pagado": 108671150, "saldo_apartamento": 179317850, "estado": "803 - CU", "nombres": ["MARGARITA ROSA PULIDO"], "cedulas": ["57713439"], "mora_detail": [], "total_cancelar_mora": null}], "42101771": [{"apt": "808", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3317371, "valor_pagado": 88930918, "saldo_apartamento": 221907882, "estado": "En mora", "nombres": ["DORIS GRANADOS CAMACHO", "DANIEL GRAJALES GRANADOS"], "cedulas": ["42101771", "1088311671"], "mora_detail": [], "total_cancelar_mora": null}], "1088311671": [{"apt": "808", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3317371, "valor_pagado": 88930918, "saldo_apartamento": 221907882, "estado": "En mora", "nombres": ["DORIS GRANADOS CAMACHO", "DANIEL GRAJALES GRANADOS"], "cedulas": ["42101771", "1088311671"], "mora_detail": [], "total_cancelar_mora": null}], "2000011713": [{"apt": "809", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3649748, "valor_pagado": 131441695, "saldo_apartamento": 244106005, "estado": "PAGADO AL 35%", "nombres": ["ALEXIS FRANCISCO MARQUEZ"], "cedulas": ["2000011713"], "mora_detail": [], "total_cancelar_mora": null}], "25062911": [{"apt": "902", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 40000000, "valor_pagado": 145193250, "saldo_apartamento": 270796750, "estado": "902.0", "nombres": ["ESTHER ZORAYDA CESPEDES DE LOS RIOS"], "cedulas": ["25062911"], "mora_detail": [], "total_cancelar_mora": null}], "900132012-1": [{"apt": "904", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 14978385, "valor_pagado": 130827080, "saldo_apartamento": 318452420, "estado": "Al Dia", "nombres": ["SCALA ASCENSORES S.A.S"], "cedulas": ["900132012-1"], "mora_detail": [], "total_cancelar_mora": null}], "PAJ834979": [{"apt": "908", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4452227, "valor_pagado": 184719896, "saldo_apartamento": 266490104, "estado": "PAGADO AL 35%", "nombres": ["LEIDY MARCELA TOVAR ARIAS", "JOHAN ANDRES CANO CARRILLO"], "cedulas": ["PAJ834979", "1036955240"], "mora_detail": [], "total_cancelar_mora": null}], "1036955240": [{"apt": "908", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4452227, "valor_pagado": 184719896, "saldo_apartamento": 266490104, "estado": "PAGADO AL 35%", "nombres": ["LEIDY MARCELA TOVAR ARIAS", "JOHAN ANDRES CANO CARRILLO"], "cedulas": ["PAJ834979", "1036955240"], "mora_detail": [], "total_cancelar_mora": null}], "395226": [{"apt": "909", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1665720, "valor_pagado": 69428098, "saldo_apartamento": 128571902, "estado": "PAGADO AL 35%", "nombres": ["ALEXANDER BURGY", "CATHERINE FRANCO MARMOLEJO"], "cedulas": ["395226", "1130600208"], "mora_detail": [], "total_cancelar_mora": null}], "1130600208": [{"apt": "909", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1665720, "valor_pagado": 69428098, "saldo_apartamento": 128571902, "estado": "PAGADO AL 35%", "nombres": ["ALEXANDER BURGY", "CATHERINE FRANCO MARMOLEJO"], "cedulas": ["395226", "1130600208"], "mora_detail": [], "total_cancelar_mora": null}], "21476612": [{"apt": "1002", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": null, "valor_pagado": 150000000, "saldo_apartamento": 257000000, "estado": "PAGADO AL 35%", "nombres": ["YUDY JOVANA TORO VELASQUEZ"], "cedulas": ["21476612"], "mora_detail": [], "total_cancelar_mora": null}], "1088033880": [{"apt": "1003", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6924194.143, "valor_pagado": 191189205, "saldo_apartamento": 152602795, "estado": "Al Dia", "nombres": ["ANA MARIA RODRIGUEZ FRANCO"], "cedulas": ["1088033880"], "mora_detail": [], "total_cancelar_mora": null}], "1088324855": [{"apt": "1004", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": null, "valor_pagado": 259452925, "saldo_apartamento": 159107575, "estado": "Al Dia", "nombres": ["SANTIAGO OSPINA ALVAREZ", "LINA MARCELA QUINTERO"], "cedulas": ["1088324855", "1088305537"], "mora_detail": [], "total_cancelar_mora": null}], "1088305537": [{"apt": "1004", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": null, "valor_pagado": 259452925, "saldo_apartamento": 159107575, "estado": "Al Dia", "nombres": ["SANTIAGO OSPINA ALVAREZ", "LINA MARCELA QUINTERO"], "cedulas": ["1088324855", "1088305537"], "mora_detail": [], "total_cancelar_mora": null}], "1088287482": [{"apt": "1006", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3997870, "valor_pagado": 146927585, "saldo_apartamento": 272865515, "estado": "PAGADO AL 35%", "nombres": ["JIMENA ALEJANDRA BETANCUR RIVERA"], "cedulas": ["1088287482"], "mora_detail": [], "total_cancelar_mora": null}], "42090307": [{"apt": "1007", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4875995, "valor_pagado": 83007082, "saldo_apartamento": 171324118, "estado": "En mora", "nombres": ["GLADYZ GIL LOIZA"], "cedulas": ["42090307"], "mora_detail": [], "total_cancelar_mora": 6108819.406}], "4387761": [{"apt": "1008", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3817740, "valor_pagado": 144608760, "saldo_apartamento": 259811240, "estado": "PAGADO AL 35%", "nombres": ["PABLO EMILIO APONTE BOHORQUEZ"], "cedulas": ["4387761"], "mora_detail": [], "total_cancelar_mora": null}], "1088298704": [{"apt": "1009", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 2846205, "valor_pagado": 80833016, "saldo_apartamento": 133926984, "estado": "En mora", "nombres": ["FAUSTO RENTERIA MATURANA"], "cedulas": ["1088298704"], "mora_detail": [{"intereses": 118564.3227, "gastos": 284620.5, "valor_cancelar": 3249389.823, "tasa": 0.0006126027397260274, "dias": 68, "cuota": 2846205.0, "fecha_venc": "15/02/2026"}, {"intereses": 69743.71923, "gastos": 199234.35, "valor_cancelar": 3115183.069, "tasa": 0.0006126027397260274, "dias": 40, "cuota": 2846205.0, "fecha_venc": "15/03/2026"}, {"intereses": 16302.90628, "gastos": 142310.25, "valor_cancelar": 3004818.156, "tasa": 0.0006364383561643836, "dias": 9, "cuota": 2846205.0, "fecha_venc": "15/04/2026"}], "total_cancelar_mora": 9502682.543}], "1087999848": [{"apt": "1102", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3379917, "valor_pagado": 164479502, "saldo_apartamento": 297055498, "estado": "PAGADO AL 35%", "nombres": ["ORLANDO GUZMAN GONZALEZ", "LINA MARCELA OCAMPO"], "cedulas": ["1087999848", "1088267079"], "mora_detail": [], "total_cancelar_mora": null}], "1088267079": [{"apt": "1102", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3379917, "valor_pagado": 164479502, "saldo_apartamento": 297055498, "estado": "PAGADO AL 35%", "nombres": ["ORLANDO GUZMAN GONZALEZ", "LINA MARCELA OCAMPO"], "cedulas": ["1087999848", "1088267079"], "mora_detail": [], "total_cancelar_mora": null}], "1088303682": [{"apt": "1103", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1337980, "valor_pagado": 107829380, "saldo_apartamento": 187810920, "estado": "PAGADO AL 35%", "nombres": ["JOSE DAVID MONTOYA LOPEZ"], "cedulas": ["1088303682"], "mora_detail": [], "total_cancelar_mora": null}], "42116510": [{"apt": "1104", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2500000, "valor_pagado": 109342910, "saldo_apartamento": 297266790, "estado": "AL DIA", "nombres": ["SANDRA MILENA SANCHEZ ARIAS"], "cedulas": ["42116510"], "mora_detail": [], "total_cancelar_mora": null}], "25195627": [{"apt": "1108", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2774382.8, "valor_pagado": 145770721, "saldo_apartamento": 416445000.0, "estado": "Al Dia", "nombres": ["ALICIA ANDREA VILLADA"], "cedulas": ["25195627"], "mora_detail": [], "total_cancelar_mora": null}], "4423181": [{"apt": "1109", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2181667, "valor_pagado": 83235492, "saldo_apartamento": 150464508, "estado": "PAGADO AL 35%", "nombres": ["MARCO ARLEY TABORDA GALLEGO"], "cedulas": ["4423181"], "mora_detail": [], "total_cancelar_mora": null}], "10012821": [{"apt": "1203", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1368480, "valor_pagado": 108896800, "saldo_apartamento": 189792200, "estado": "PAGADO AL 35%", "nombres": ["MAURICIO ANTONIO LOPEZ AGUDELO"], "cedulas": ["10012821"], "mora_detail": [], "total_cancelar_mora": null}], "1088328826": [{"apt": "1204", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3092167, "valor_pagado": 122318012, "saldo_apartamento": 349480000.0, "estado": "PAGADO AL 35%", "nombres": ["LEIVER ANDRES CAMPEON BENJUMEA"], "cedulas": ["1088328826"], "mora_detail": [], "total_cancelar_mora": null}], "1088288520": [{"apt": "1206", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4879341, "valor_pagado": 276000000, "saldo_apartamento": 187598800, "estado": "PAGADO AL 35%", "nombres": ["KATHERINE CARDONA MOSQUERA"], "cedulas": ["1088288520"], "mora_detail": [], "total_cancelar_mora": null}], "30236135": [{"apt": "1207", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2966891, "valor_pagado": 73304820, "saldo_apartamento": 171044230, "estado": "PAGADO AL 35%", "nombres": ["VIVIAN JULIETH CARDENAS PAREJA"], "cedulas": ["30236135"], "mora_detail": [], "total_cancelar_mora": null}], "10007627": [{"apt": "1208", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": null, "valor_pagado": 59494222, "saldo_apartamento": 412027778, "estado": "AL DIA", "nombres": ["HECTOR FABIO GAVIRIA OROZCO"], "cedulas": ["10007627"], "mora_detail": [], "total_cancelar_mora": null}], "18511669": [{"apt": "1209", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2238953, "valor_pagado": 78846542, "saldo_apartamento": 140143458, "estado": "PAGADO AL 35%", "nombres": ["JUAN JOSE CORREA SANCHEZ"], "cedulas": ["18511669"], "mora_detail": [], "total_cancelar_mora": null}], "42127971": [{"apt": "1301", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4043264, "valor_pagado": 157426788, "saldo_apartamento": 319331312, "estado": "Al Dia", "nombres": ["FAISURY WAGNER CASTRILLON"], "cedulas": ["42127971"], "mora_detail": [], "total_cancelar_mora": null}], "1088021884": [{"apt": "1303", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3601798, "valor_pagado": 76899315, "saldo_apartamento": 385485685, "estado": "CANCELADO", "nombres": ["LEONARDO PAREJA PAREJA"], "cedulas": ["1088021884"], "mora_detail": [], "total_cancelar_mora": null}], "1116132155": [{"apt": "1307", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2757264, "valor_pagado": 79587167, "saldo_apartamento": 148788833, "estado": "PAGADO AL 35%", "nombres": ["ESTEFANIA RIVERA OSORIO"], "cedulas": ["1116132155"], "mora_detail": [], "total_cancelar_mora": null}], "1088249687": [{"apt": "1304", "proyecto": "SUNSET TOWET", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": null, "valor_pagado": 345353890, "saldo_apartamento": null, "estado": "PAGADO AL 100%", "nombres": ["JULIAN CAMILO VILLADA JARAMILLO"], "cedulas": ["1088249687"], "mora_detail": [], "total_cancelar_mora": null}], "75056814": [{"apt": "1309", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": null, "valor_pagado": 83345548, "saldo_apartamento": 154654452, "estado": "PAGADO AL 35%", "nombres": ["JESUS NORBEY GARCIA VALENCIA"], "cedulas": ["75056814"], "mora_detail": [], "total_cancelar_mora": null}], "1127234453": [{"apt": "1401", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": null, "valor_pagado": 238982600, "saldo_apartamento": 232176200, "estado": "Al Dia", "nombres": ["LIBARDO GARCIA VALENCIA"], "cedulas": ["1127234453"], "mora_detail": [], "total_cancelar_mora": null}], "1087990238": [{"apt": "1402", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 10254030, "valor_pagado": 162048000, "saldo_apartamento": 287233000, "estado": "PAGADO AL 35%", "nombres": ["DARLIN JOHANA RAMIREZ OCAMPO", "GUSTAVO ADOLFO URIBE"], "cedulas": ["1087990238", "18518720"], "mora_detail": [], "total_cancelar_mora": null}], "18518720": [{"apt": "1402", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 10254030, "valor_pagado": 162048000, "saldo_apartamento": 287233000, "estado": "PAGADO AL 35%", "nombres": ["DARLIN JOHANA RAMIREZ OCAMPO", "GUSTAVO ADOLFO URIBE"], "cedulas": ["1087990238", "18518720"], "mora_detail": [], "total_cancelar_mora": null}], "24433544": [{"apt": "1404", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4974925, "valor_pagado": 167678800, "saldo_apartamento": 264600900, "estado": "PAGADO AL 35%", "nombres": ["HEROINA ARISTIZABAL ZULUAGA", "MARIA JOHANA ARISTIZABAL ALZATE"], "cedulas": ["24433544", "53132927"], "mora_detail": [], "total_cancelar_mora": null}], "53132927": [{"apt": "1404", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4974925, "valor_pagado": 167678800, "saldo_apartamento": 264600900, "estado": "PAGADO AL 35%", "nombres": ["HEROINA ARISTIZABAL ZULUAGA", "MARIA JOHANA ARISTIZABAL ALZATE"], "cedulas": ["24433544", "53132927"], "mora_detail": [], "total_cancelar_mora": null}], "18401908": [{"apt": "1407", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1368203, "valor_pagado": 60256155, "saldo_apartamento": 111901845, "estado": "PAGADO AL 35%", "nombres": ["EDWIN MAURICIO OCAMPO GALVIS"], "cedulas": ["18401908"], "mora_detail": [], "total_cancelar_mora": null}], "1088281588": [{"apt": "1408", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": null, "valor_pagado": 157241492, "saldo_apartamento": 306716508, "estado": "1408.0", "nombres": ["OSCAR ANDRES GOMEZ OSPINA", "LUISA FERNANDA CASTRO"], "cedulas": ["1088281588", "42154625"], "mora_detail": [], "total_cancelar_mora": null}], "42154625": [{"apt": "1408", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": null, "valor_pagado": 157241492, "saldo_apartamento": 306716508, "estado": "1408.0", "nombres": ["OSCAR ANDRES GOMEZ OSPINA", "LUISA FERNANDA CASTRO"], "cedulas": ["1088281588", "42154625"], "mora_detail": [], "total_cancelar_mora": null}], "42052447": [{"apt": "1409", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1689242, "valor_pagado": 67380000, "saldo_apartamento": 123320000, "estado": "PAGADO AL 35%", "nombres": ["IDALI CARMONA LOSADA"], "cedulas": ["42052447"], "mora_detail": [], "total_cancelar_mora": null}], "24829377": [{"apt": "1501", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4965250, "valor_pagado": 165539605, "saldo_apartamento": 296948925, "estado": "En mora", "nombres": ["SANDRA MILENA CUARTAS VALENCIA"], "cedulas": ["24829377"], "mora_detail": [], "total_cancelar_mora": 10517317.81}], "1088306784": [{"apt": "1503", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": null, "valor_pagado": 62914411, "saldo_apartamento": 238903589, "estado": "AL DIA", "nombres": ["JUAN DAVID OSORNO VALENCIA"], "cedulas": ["1088306784"], "mora_detail": [], "total_cancelar_mora": null}], "9957260": [{"apt": "1504", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4084378.333, "valor_pagado": 131179074, "saldo_apartamento": 278619226, "estado": "En mora", "nombres": ["ARIEL ANGEL VILLADA ESCOBAR"], "cedulas": ["9957260"], "mora_detail": [], "total_cancelar_mora": 5972415.944}], "16079093": [{"apt": "1506", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5206439, "valor_pagado": 356269183, "saldo_apartamento": 15619317, "estado": "Al Dia", "nombres": ["OSCAR ALONSO MARIN VALENCIA"], "cedulas": ["16079093"], "mora_detail": [], "total_cancelar_mora": null}], "4516352": [{"apt": "1507", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 7317550, "valor_pagado": 45872470, "saldo_apartamento": 127285530, "estado": "CANCELADO", "nombres": ["RUBEN DARIO ZAPATA GIRALDO", "DIANA MARCELA MU\u00d1OZ CEBALLOS"], "cedulas": ["4516352", "1088263401"], "mora_detail": [], "total_cancelar_mora": null}], "1088263401": [{"apt": "1507", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 7317550, "valor_pagado": 45872470, "saldo_apartamento": 127285530, "estado": "CANCELADO", "nombres": ["RUBEN DARIO ZAPATA GIRALDO", "DIANA MARCELA MU\u00d1OZ CEBALLOS"], "cedulas": ["4516352", "1088263401"], "mora_detail": [], "total_cancelar_mora": null}], "1004700386": [{"apt": "1508", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2969203, "valor_pagado": 104739625, "saldo_apartamento": 206642375, "estado": "En mora", "nombres": ["SALOME MARIN MEDINA"], "cedulas": ["1004700386"], "mora_detail": [], "total_cancelar_mora": 4244075}], "1004831489": [{"apt": "1509", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": null, "valor_pagado": 91342771, "saldo_apartamento": 330657229, "estado": "AL DIA", "nombres": ["NAYELLY CARVAJAL MORALES", "ANDRES FELIPE CARVAJAL MORALES"], "cedulas": ["1004831489", "1093222054"], "mora_detail": [], "total_cancelar_mora": null}], "1093222054": [{"apt": "1509", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": null, "valor_pagado": 91342771, "saldo_apartamento": 330657229, "estado": "AL DIA", "nombres": ["NAYELLY CARVAJAL MORALES", "ANDRES FELIPE CARVAJAL MORALES"], "cedulas": ["1004831489", "1093222054"], "mora_detail": [], "total_cancelar_mora": null}], "1088258603": [{"apt": "1601", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3812950, "valor_pagado": 150712950, "saldo_apartamento": 262009250, "estado": "PAGADO AL 35%", "nombres": ["JHONY ALEJANDRO VALENCIA FLOREZ"], "cedulas": ["1088258603"], "mora_detail": [], "total_cancelar_mora": null}], "660590886": [{"apt": "1603", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": null, "valor_pagado": 53900000, "saldo_apartamento": null, "estado": "CANCELADA", "nombres": ["ALEXANDRA RESTREPO GIRALDO"], "cedulas": ["660590886"], "mora_detail": [], "total_cancelar_mora": null}], "42094818": [{"apt": "1606", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 10923318, "valor_pagado": 195310518, "saldo_apartamento": 463459352, "estado": "Al Dia", "nombres": ["MARIA MONICA CRUZ LOPEZ", "CARLOS ALBERTO GIL BOLIVAR"], "cedulas": ["42094818", "10289729"], "mora_detail": [], "total_cancelar_mora": null}, {"apt": "1401", "proyecto": "TORRE INTI", "plan": "N/A", "valor_apt": null, "valor_cuota": null, "valor_pagado": null, "saldo_apartamento": null, "estado": "N/A", "nombres": ["MARIA MONICA CRUZ LOPEZ"], "cedulas": ["42094818"], "mora_detail": [], "total_cancelar_mora": null}], "10289729": [{"apt": "1606", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 10923318, "valor_pagado": 195310518, "saldo_apartamento": 463459352, "estado": "Al Dia", "nombres": ["MARIA MONICA CRUZ LOPEZ", "CARLOS ALBERTO GIL BOLIVAR"], "cedulas": ["42094818", "10289729"], "mora_detail": [], "total_cancelar_mora": null}], "1053838226": [{"apt": "1607", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2061515, "valor_pagado": 78934185, "saldo_apartamento": 146865815, "estado": "PAGADO AL 35%", "nombres": ["JUAN SEBASTIAN RINCON OSORIO", "CAMILA ORREGO MURILLO"], "cedulas": ["1053838226", "1088350985"], "mora_detail": [], "total_cancelar_mora": null}], "1088350985": [{"apt": "1607", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2061515, "valor_pagado": 78934185, "saldo_apartamento": 146865815, "estado": "PAGADO AL 35%", "nombres": ["JUAN SEBASTIAN RINCON OSORIO", "CAMILA ORREGO MURILLO"], "cedulas": ["1053838226", "1088350985"], "mora_detail": [], "total_cancelar_mora": null}], "1058816396": [{"apt": "1608", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5067060, "valor_pagado": 187164000, "saldo_apartamento": 298066200, "estado": "PAGADO AL 35%", "nombres": ["WILLIAM ANDRES SALAZAR"], "cedulas": ["1058816396"], "mora_detail": [], "total_cancelar_mora": null}], "1088335164": [{"apt": "1609", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": null, "valor_pagado": 44463498, "saldo_apartamento": 202926502, "estado": "AL DIA", "nombres": ["CRISTIAN DAVID ZULETA DUQUE"], "cedulas": ["1088335164"], "mora_detail": [], "total_cancelar_mora": null}], "3230769": [{"apt": "1701", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 5495456.667, "valor_pagado": 390414145, "saldo_apartamento": 46291755, "estado": "En mora", "nombres": ["JAVIER GIRALDO BELTRAN"], "cedulas": ["3230769"], "mora_detail": [], "total_cancelar_mora": null}], "10254282": [{"apt": "1703", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3906585, "valor_pagado": 134012903, "saldo_apartamento": 190463097, "estado": "En mora", "nombres": ["RICARDO GOMEZ TABAREZ"], "cedulas": ["10254282"], "mora_detail": [], "total_cancelar_mora": null}], "42018132": [{"apt": "1706", "proyecto": "SUNSET TOWER", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": 6565807, "valor_pagado": 72223877, "saldo_apartamento": 539436970, "estado": "En mora", "nombres": ["CAROLINA ECHEVERRI MONTOYA"], "cedulas": ["42018132"], "mora_detail": [], "total_cancelar_mora": null}], "42108927": [{"apt": "1709", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2463790, "valor_pagado": 87426042, "saldo_apartamento": 162223958, "estado": "PAGADO AL 35%", "nombres": ["MARTHA NIDIA IDARRAGA", "MARIO ALBERTO MORALES ESTRADA"], "cedulas": ["42108927", "10133379"], "mora_detail": [], "total_cancelar_mora": null}], "10133379": [{"apt": "1709", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2463790, "valor_pagado": 87426042, "saldo_apartamento": 162223958, "estado": "PAGADO AL 35%", "nombres": ["MARTHA NIDIA IDARRAGA", "MARIO ALBERTO MORALES ESTRADA"], "cedulas": ["42108927", "10133379"], "mora_detail": [], "total_cancelar_mora": null}], "1088343078": [{"apt": "1801", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3525000, "valor_pagado": 151566585.5, "saldo_apartamento": 242433414.5, "estado": "PAGADO AL 35%", "nombres": ["ESTRELLA CASTILLO JIMENEZ"], "cedulas": ["1088343078"], "mora_detail": [], "total_cancelar_mora": null}], "24743023": [{"apt": "1803", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 8258103, "valor_pagado": 21000000, "saldo_apartamento": 422398000, "estado": "Al Dia", "nombres": ["GLORIA CATALINA ORTIZ ORTIZ"], "cedulas": ["24743023"], "mora_detail": [], "total_cancelar_mora": null}], "1088027666": [{"apt": "1808", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5092727, "valor_pagado": 179292727, "saldo_apartamento": 332307273, "estado": "Al Dia", "nombres": ["LAURA MELISSA BEDOYA GORDON", "DANIEL AGUDELO RODRIGUEZ"], "cedulas": ["1088027666", "1088024588"], "mora_detail": [], "total_cancelar_mora": null}], "1088024588": [{"apt": "1808", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5092727, "valor_pagado": 179292727, "saldo_apartamento": 332307273, "estado": "Al Dia", "nombres": ["LAURA MELISSA BEDOYA GORDON", "DANIEL AGUDELO RODRIGUEZ"], "cedulas": ["1088027666", "1088024588"], "mora_detail": [], "total_cancelar_mora": null}], "1054919637": [{"apt": "1806", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4061765, "valor_pagado": 149261234, "saldo_apartamento": 276738766, "estado": "PAGADO AL 35%", "nombres": ["LEIDY JOHANA FRANCO GUERRERO", "WILLINGTON ESNEIDER USMA DUQUE"], "cedulas": ["1054919637", "10024928"], "mora_detail": [], "total_cancelar_mora": null}], "10024928": [{"apt": "1806", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4061765, "valor_pagado": 149261234, "saldo_apartamento": 276738766, "estado": "PAGADO AL 35%", "nombres": ["LEIDY JOHANA FRANCO GUERRERO", "WILLINGTON ESNEIDER USMA DUQUE"], "cedulas": ["1054919637", "10024928"], "mora_detail": [], "total_cancelar_mora": null}], "24827887": [{"apt": "1906", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3747400.882, "valor_pagado": 137285734, "saldo_apartamento": 345023766, "estado": "En mora", "nombres": ["SANDRA TERESA ARIAS CORREA", "JOAN ALEXANDER AGUILAR LOTERO"], "cedulas": ["24827887", "9873043"], "mora_detail": [{"intereses": 51995.44555, "gastos": 187370.05, "valor_cancelar": 3986766.496, "tasa": 0.0006306849315068493, "dias": 22, "cuota": 3747401.0, "fecha_venc": "02/04/2026"}], "total_cancelar_mora": 3986766.496}], "9873043": [{"apt": "1906", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3747400.882, "valor_pagado": 137285734, "saldo_apartamento": 345023766, "estado": "En mora", "nombres": ["SANDRA TERESA ARIAS CORREA", "JOAN ALEXANDER AGUILAR LOTERO"], "cedulas": ["24827887", "9873043"], "mora_detail": [{"intereses": 51995.44555, "gastos": 187370.05, "valor_cancelar": 3986766.496, "tasa": 0.0006306849315068493, "dias": 22, "cuota": 3747401.0, "fecha_venc": "02/04/2026"}], "total_cancelar_mora": 3986766.496}], "1030562375": [{"apt": "1908", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5110758, "valor_pagado": 73090497, "saldo_apartamento": 440209503, "estado": "En mora", "nombres": ["DEISY SALAZAR PARRA"], "cedulas": ["1030562375"], "mora_detail": [], "total_cancelar_mora": null}], "18520876": [{"apt": "2001", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3517414, "valor_pagado": 137631850, "saldo_apartamento": 255587850, "estado": "PAGADO AL 35%", "nombres": ["JOSE DAGNOVER USMA"], "cedulas": ["18520876"], "mora_detail": [], "total_cancelar_mora": null}], "1053778872": [{"apt": "2008", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2142774.0, "valor_pagado": 118626524, "saldo_apartamento": 281363476, "estado": "N/A", "nombres": ["YULIETH COLORADO SANCHEZ"], "cedulas": ["1053778872"], "mora_detail": [], "total_cancelar_mora": null}], "18515913": [{"apt": "2102", "proyecto": "SUNSET TOWER", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4958203, "valor_pagado": 169662500.3, "saldo_apartamento": 315087499.7, "estado": "PAGADO AL 35%", "nombres": ["JULIAN DAVID RAMIREZ HOYOS"], "cedulas": ["18515913"], "mora_detail": [], "total_cancelar_mora": null}], "25166151": [{"apt": "501", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": null, "valor_pagado": 82229408, "saldo_apartamento": 457980592, "estado": "Al Dia", "nombres": ["Luz Maria Quiceno Mar\u00edn"], "cedulas": ["25166151"], "mora_detail": [], "total_cancelar_mora": null}, {"apt": "503", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3744006, "valor_pagado": 70904096, "saldo_apartamento": 388410904, "estado": "Al Dia", "nombres": ["Luz Maria Quiceno Mar\u00edn"], "cedulas": ["25166151"], "mora_detail": [], "total_cancelar_mora": null}], "1004519321": [{"apt": "507", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3214028, "valor_pagado": 85564000, "saldo_apartamento": 332771000, "estado": "Al Dia", "nombres": ["Monica Alejandra Grajales Cardona", "Juan Ram\u00f3n Gil Cano"], "cedulas": ["1004519321", "18502251"], "mora_detail": [], "total_cancelar_mora": null}], "18502251": [{"apt": "507", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3214028, "valor_pagado": 85564000, "saldo_apartamento": 332771000, "estado": "Al Dia", "nombres": ["Monica Alejandra Grajales Cardona", "Juan Ram\u00f3n Gil Cano"], "cedulas": ["1004519321", "18502251"], "mora_detail": [], "total_cancelar_mora": null}], "41726995": [{"apt": "508", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2959765, "valor_pagado": 73074595, "saldo_apartamento": 304839405, "estado": "Al Dia", "nombres": ["Rosa Elvira Rodriguez Rodriguez", "Jaime Espinosa Pe\u00f1a"], "cedulas": ["41726995", "19065304"], "mora_detail": [], "total_cancelar_mora": null}], "19065304": [{"apt": "508", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2959765, "valor_pagado": 73074595, "saldo_apartamento": 304839405, "estado": "Al Dia", "nombres": ["Rosa Elvira Rodriguez Rodriguez", "Jaime Espinosa Pe\u00f1a"], "cedulas": ["41726995", "19065304"], "mora_detail": [], "total_cancelar_mora": null}], "1032407740": [{"apt": "509", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1281000, "valor_pagado": 49835000, "saldo_apartamento": 129165000, "estado": "Al Dia", "nombres": ["JEISSON ALBERTO BARAJAS URREGO"], "cedulas": ["1032407740"], "mora_detail": [], "total_cancelar_mora": null}], "80422033": [{"apt": "510", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1891982, "valor_pagado": 29919820, "saldo_apartamento": 182048380, "estado": "En mora", "nombres": ["ANDRES ESTRADA LOPEZ", "CLAUDIA ISABEL LAVERDA"], "cedulas": ["80422033", "42100730"], "mora_detail": [], "total_cancelar_mora": null}], "42100730": [{"apt": "510", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1891982, "valor_pagado": 29919820, "saldo_apartamento": 182048380, "estado": "En mora", "nombres": ["ANDRES ESTRADA LOPEZ", "CLAUDIA ISABEL LAVERDA"], "cedulas": ["80422033", "42100730"], "mora_detail": [], "total_cancelar_mora": null}], "1088301877": [{"apt": "601", "proyecto": "SUNSET TOWER", "plan": "LEASING", "valor_apt": null, "valor_cuota": 4513161, "valor_pagado": 262756800, "saldo_apartamento": 239500200, "estado": "Al Dia", "nombres": ["ESTEFANIA TORO ARROYAVE"], "cedulas": ["1088301877"], "mora_detail": [], "total_cancelar_mora": null}], "40771870": [{"apt": "605", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": null, "valor_pagado": 21000000, "saldo_apartamento": 478676200, "estado": "Al Dia", "nombres": ["CLAUDIA MERCEDES VALENCIA CUESTA", "JATNICIO MOSQUERA PALACIOS"], "cedulas": ["40771870", "79653906"], "mora_detail": [], "total_cancelar_mora": null}], "79653906": [{"apt": "605", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": null, "valor_pagado": 21000000, "saldo_apartamento": 478676200, "estado": "Al Dia", "nombres": ["CLAUDIA MERCEDES VALENCIA CUESTA", "JATNICIO MOSQUERA PALACIOS"], "cedulas": ["40771870", "79653906"], "mora_detail": [], "total_cancelar_mora": null}], "42125330": [{"apt": "607", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4356068, "valor_pagado": 35492476, "saldo_apartamento": 464183724, "estado": "Al Dia", "nombres": ["CLAUDIA ECHEVERRI PAREJA"], "cedulas": ["42125330"], "mora_detail": [], "total_cancelar_mora": null}], "10128420": [{"apt": "608", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4500000, "valor_pagado": 110500000, "saldo_apartamento": 269613000, "estado": "Al Dia", "nombres": ["Gustavo Mar\u00edn Sanchez", "Elsa Gladys Casanova Rosero"], "cedulas": ["10128420", "66731729"], "mora_detail": [], "total_cancelar_mora": null}], "66731729": [{"apt": "608", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4500000, "valor_pagado": 110500000, "saldo_apartamento": 269613000, "estado": "Al Dia", "nombres": ["Gustavo Mar\u00edn Sanchez", "Elsa Gladys Casanova Rosero"], "cedulas": ["10128420", "66731729"], "mora_detail": [], "total_cancelar_mora": null}], "1116439362": [{"apt": "609", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1281000, "valor_pagado": 29340725, "saldo_apartamento": 149659275, "estado": "Al Dia", "nombres": ["CLAUDIA LORENA OCAMPO CUERVO", "HECTOR JAVIER ROSA REYES"], "cedulas": ["1116439362", "PASAPORTE: G625252"], "mora_detail": [], "total_cancelar_mora": null}], "1116435849": [{"apt": "610", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 1598920, "valor_pagado": 66179081, "saldo_apartamento": 113504919, "estado": "Al Dia", "nombres": ["Karol Ximena Parra Lopez"], "cedulas": ["1116435849"], "mora_detail": [], "total_cancelar_mora": null}], "1088001032": [{"apt": "701", "proyecto": "TORRE INTI", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": 1654457, "valor_pagado": 6625000, "saldo_apartamento": null, "estado": "N/A", "nombres": ["YURY YOHANA MU\u00d1OZ MARIN"], "cedulas": ["1088001032"], "mora_detail": [], "total_cancelar_mora": null}], "1116433206": [{"apt": "705", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 1470629, "valor_pagado": 92153108, "saldo_apartamento": 94635893, "estado": "Al Dia", "nombres": ["Leidy Johanna Arcila Garcia"], "cedulas": ["1116433206"], "mora_detail": [], "total_cancelar_mora": null}], "42007995": [{"apt": "708", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 3910265.226, "valor_pagado": 88553486, "saldo_apartamento": 375463514, "estado": "708.0", "nombres": ["MARTHA LORENA RODRIGUEZ SILVA", "CARLOS FELIPE OSORIO FLOREZ"], "cedulas": ["42007995", "10127580"], "mora_detail": [], "total_cancelar_mora": null}], "10127580": [{"apt": "708", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 3910265.226, "valor_pagado": 88553486, "saldo_apartamento": 375463514, "estado": "708.0", "nombres": ["MARTHA LORENA RODRIGUEZ SILVA", "CARLOS FELIPE OSORIO FLOREZ"], "cedulas": ["42007995", "10127580"], "mora_detail": [], "total_cancelar_mora": null}], "43155280": [{"apt": "804", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 8715004, "valor_pagado": 64580085, "saldo_apartamento": 821373295, "estado": "Al Dia", "nombres": ["MARIA CRISTINA OSORIO RESTREPO", "LILIANA OSORIO RESTREPO"], "cedulas": ["43155280", "42152799"], "mora_detail": [], "total_cancelar_mora": null}], "42152799": [{"apt": "804", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 8715004, "valor_pagado": 64580085, "saldo_apartamento": 821373295, "estado": "Al Dia", "nombres": ["MARIA CRISTINA OSORIO RESTREPO", "LILIANA OSORIO RESTREPO"], "cedulas": ["43155280", "42152799"], "mora_detail": [], "total_cancelar_mora": null}], "24579450": [{"apt": "805", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 5786332, "valor_pagado": 43999471, "saldo_apartamento": 552532163, "estado": "En mora", "nombres": ["MARTHA LILIANA LOPEZ GARCIA", "EDINSON MANTILLA GARAVITO"], "cedulas": ["24579450", "79577000"], "mora_detail": [{"intereses": 4551.673959, "gastos": 11786.1, "valor_cancelar": 134198.774, "tasa": 0.000613, "dias": 63, "cuota": 117861.0, "fecha_venc": "20/02/2026"}, {"intereses": 124145.7531, "gastos": 405043.24, "valor_cancelar": 6315520.993, "tasa": 0.000613, "dias": 35, "cuota": 5786332.0, "fecha_venc": "20/03/2026"}, {"intereses": 14581.55664, "gastos": 289316.6, "valor_cancelar": 6090230.157, "tasa": 0.00063, "dias": 4, "cuota": 5786332.0, "fecha_venc": "20/04/2026"}], "total_cancelar_mora": 12539949.92}], "79577000": [{"apt": "805", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 5786332, "valor_pagado": 43999471, "saldo_apartamento": 552532163, "estado": "En mora", "nombres": ["MARTHA LILIANA LOPEZ GARCIA", "EDINSON MANTILLA GARAVITO"], "cedulas": ["24579450", "79577000"], "mora_detail": [{"intereses": 4551.673959, "gastos": 11786.1, "valor_cancelar": 134198.774, "tasa": 0.000613, "dias": 63, "cuota": 117861.0, "fecha_venc": "20/02/2026"}, {"intereses": 124145.7531, "gastos": 405043.24, "valor_cancelar": 6315520.993, "tasa": 0.000613, "dias": 35, "cuota": 5786332.0, "fecha_venc": "20/03/2026"}, {"intereses": 14581.55664, "gastos": 289316.6, "valor_cancelar": 6090230.157, "tasa": 0.00063, "dias": 4, "cuota": 5786332.0, "fecha_venc": "20/04/2026"}], "total_cancelar_mora": 12539949.92}], "42001744": [{"apt": "808", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 3321818, "valor_pagado": 148125000, "saldo_apartamento": 236386000, "estado": "Al Dia", "nombres": ["MARIA MAGDALENA LOPEZ MARTINEZ"], "cedulas": ["42001744"], "mora_detail": [], "total_cancelar_mora": null}], "42016902": [{"apt": "810", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4065636, "valor_pagado": 30550752, "saldo_apartamento": 127138848, "estado": "Al Dia", "nombres": ["Jenny Johana Giraldo", "Luis Edgardo Ruiz Giraldo"], "cedulas": ["42016902", "1060266899"], "mora_detail": [], "total_cancelar_mora": null}], "1060266899": [{"apt": "810", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4065636, "valor_pagado": 30550752, "saldo_apartamento": 127138848, "estado": "Al Dia", "nombres": ["Jenny Johana Giraldo", "Luis Edgardo Ruiz Giraldo"], "cedulas": ["42016902", "1060266899"], "mora_detail": [], "total_cancelar_mora": null}], "94321407": [{"apt": "811", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1331409, "valor_pagado": 33628180, "saldo_apartamento": 136983820, "estado": "Al Dia", "nombres": ["Jhon Manuel Alvarez Orozco"], "cedulas": ["94321407"], "mora_detail": [], "total_cancelar_mora": null}, {"apt": "2811", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1957322, "valor_pagado": 46146440, "saldo_apartamento": 196445560, "estado": "Al Dia", "nombres": ["JHON MANUEL ALVAREZ OROZCO"], "cedulas": ["94321407"], "mora_detail": [], "total_cancelar_mora": null}], "42096098": [{"apt": "901", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3016192, "valor_pagado": 70720215.65, "saldo_apartamento": 458559784.4, "estado": "901.0", "nombres": ["Alba Lucia Torres Gomez"], "cedulas": ["42096098"], "mora_detail": [], "total_cancelar_mora": 33490342.32}], "18595419": [{"apt": "904", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 8516982, "valor_pagado": 21000000, "saldo_apartamento": 911185418, "estado": "N/A", "nombres": ["JHON FERNANDO CASTRILLON"], "cedulas": ["18595419"], "mora_detail": [], "total_cancelar_mora": 17130955.39}], "1087996847": [{"apt": "905", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2420969, "valor_pagado": 63097256, "saldo_apartamento": 248621744, "estado": "905.0", "nombres": ["FLOR ALEJANDRA TORO MARULANDA"], "cedulas": ["1087996847"], "mora_detail": [], "total_cancelar_mora": null}], "80741020": [{"apt": "907", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 3771274, "valor_pagado": 161053876, "saldo_apartamento": 218733124, "estado": "Al Dia", "nombres": ["MICHAEL STIVENS PALACIOS RODRIGUEZ", "JESSICA EILEEN PALACIOS RUEDA"], "cedulas": ["80741020", "1125803867"], "mora_detail": [], "total_cancelar_mora": null}], "1125803867": [{"apt": "907", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 3771274, "valor_pagado": 161053876, "saldo_apartamento": 218733124, "estado": "Al Dia", "nombres": ["MICHAEL STIVENS PALACIOS RODRIGUEZ", "JESSICA EILEEN PALACIOS RUEDA"], "cedulas": ["80741020", "1125803867"], "mora_detail": [], "total_cancelar_mora": null}], "1087492107": [{"apt": "910", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": null, "valor_pagado": 24689000, "saldo_apartamento": 219742000, "estado": "En mora", "nombres": ["ALEXANDER CARDONA BAUTISTA"], "cedulas": ["1087492107"], "mora_detail": [], "total_cancelar_mora": null}], "1125271641": [{"apt": "912", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 2223409, "valor_pagado": 32117045, "saldo_apartamento": 212313955, "estado": "Al Dia", "nombres": ["JHON FREDY RENDON SUAREZ", "JULIETH GOMEZ LOSADA"], "cedulas": ["1125271641", "1125268557"], "mora_detail": [], "total_cancelar_mora": null}], "1125268557": [{"apt": "912", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 2223409, "valor_pagado": 32117045, "saldo_apartamento": 212313955, "estado": "Al Dia", "nombres": ["JHON FREDY RENDON SUAREZ", "JULIETH GOMEZ LOSADA"], "cedulas": ["1125271641", "1125268557"], "mora_detail": [], "total_cancelar_mora": null}], "42101078": [{"apt": "1007", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2549660, "valor_pagado": 96570000, "saldo_apartamento": 316210000, "estado": "Al Dia", "nombres": ["GLORIA EDILSE REYES ZAPATA"], "cedulas": ["42101078"], "mora_detail": [], "total_cancelar_mora": null}], "1088333705": [{"apt": "1010", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1562247, "valor_pagado": 45618422, "saldo_apartamento": 169527578, "estado": "Al Dia", "nombres": ["William Andres Bueno Gaspar"], "cedulas": ["1088333705"], "mora_detail": [], "total_cancelar_mora": null}], "25113022": [{"apt": "1101", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1599000, "valor_pagado": 55814154, "saldo_apartamento": 399914846, "estado": "Al Dia", "nombres": ["Maria Fernanda Trochez varela", "Wilson Fernando Giraldo Barbosa"], "cedulas": ["25113022", "75087384"], "mora_detail": [], "total_cancelar_mora": null}], "75087384": [{"apt": "1101", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1599000, "valor_pagado": 55814154, "saldo_apartamento": 399914846, "estado": "Al Dia", "nombres": ["Maria Fernanda Trochez varela", "Wilson Fernando Giraldo Barbosa"], "cedulas": ["25113022", "75087384"], "mora_detail": [], "total_cancelar_mora": null}], "43907710": [{"apt": "1102", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6372834, "valor_pagado": 55244000, "saldo_apartamento": 584201946, "estado": "Al Dia", "nombres": ["KELY JOHANA MEDINA"], "cedulas": ["43907710"], "mora_detail": [], "total_cancelar_mora": null}], "1088255488": [{"apt": "1104", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 8860698, "valor_pagado": 65302792, "saldo_apartamento": 835048547, "estado": "En mora", "nombres": ["ANDERSON RIOS CASTA\u00d1O", "M\u00d3NICA RIOS PARRA"], "cedulas": ["1088255488", "42158535"], "mora_detail": [], "total_cancelar_mora": null}], "42158535": [{"apt": "1104", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 8860698, "valor_pagado": 65302792, "saldo_apartamento": 835048547, "estado": "En mora", "nombres": ["ANDERSON RIOS CASTA\u00d1O", "M\u00d3NICA RIOS PARRA"], "cedulas": ["1088255488", "42158535"], "mora_detail": [], "total_cancelar_mora": null}], "1088284992": [{"apt": "1107", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4299796, "valor_pagado": 52300000, "saldo_apartamento": 453391000, "estado": "Al Dia", "nombres": ["PAOLA ANDREA GONZALEZ TABIMA"], "cedulas": ["1088284992"], "mora_detail": [], "total_cancelar_mora": null}], "1088281490": [{"apt": "1110", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1635528, "valor_pagado": 47536000, "saldo_apartamento": 177031900, "estado": "Al Dia", "nombres": ["JUAN SEBASTIAN RAMIREZ OSPINA"], "cedulas": ["1088281490"], "mora_detail": [], "total_cancelar_mora": null}], "24325631": [{"apt": "1111", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1506260, "valor_pagado": 43150140, "saldo_apartamento": 136272860, "estado": "1111.0", "nombres": ["GLORIA ESPERANZA PATI\u00d1O HURTADO"], "cedulas": ["24325631"], "mora_detail": [], "total_cancelar_mora": null}], "30404688": [{"apt": "1112", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 2444702, "valor_pagado": 30778808, "saldo_apartamento": 195576192, "estado": "Al Dia", "nombres": ["YSLENY VARGAS HURTADO", "JOSE ALEXANDER LOPEZ OLARTE"], "cedulas": ["30404688", "75074342"], "mora_detail": [], "total_cancelar_mora": null}], "75074342": [{"apt": "1112", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 2444702, "valor_pagado": 30778808, "saldo_apartamento": 195576192, "estado": "Al Dia", "nombres": ["YSLENY VARGAS HURTADO", "JOSE ALEXANDER LOPEZ OLARTE"], "cedulas": ["30404688", "75074342"], "mora_detail": [], "total_cancelar_mora": null}], "22668937": [{"apt": "1202", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3251868, "valor_pagado": 108854868.2, "saldo_apartamento": 393945131.9, "estado": "1202.0", "nombres": ["Claudia Marcela Palacio Betancourth", "Wiston Erick Duque Zapata"], "cedulas": ["22668937", "8782547"], "mora_detail": [], "total_cancelar_mora": null}], "8782547": [{"apt": "1202", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3251868, "valor_pagado": 108854868.2, "saldo_apartamento": 393945131.9, "estado": "1202.0", "nombres": ["Claudia Marcela Palacio Betancourth", "Wiston Erick Duque Zapata"], "cedulas": ["22668937", "8782547"], "mora_detail": [], "total_cancelar_mora": null}], "1088329271": [{"apt": "1207", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5617145, "valor_pagado": 26617145, "saldo_apartamento": 553194855, "estado": "Al Dia", "nombres": ["JUANITA AGUIRRE VALENCIA"], "cedulas": ["1088329271"], "mora_detail": [], "total_cancelar_mora": null}], "1125250469": [{"apt": "1208", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2406860, "valor_pagado": 373473000, "saldo_apartamento": null, "estado": "PAGADO 100%", "nombres": ["MONICA LORENA MORENO MAFLA"], "cedulas": ["1125250469"], "mora_detail": [], "total_cancelar_mora": null}], "1061742032": [{"apt": "1209", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1475548, "valor_pagado": 43144300, "saldo_apartamento": 160854700, "estado": "En mora", "nombres": ["Lisbeth Cristina Hernandez Narvaez"], "cedulas": ["1061742032"], "mora_detail": [], "total_cancelar_mora": null}], "1032470878": [{"apt": "1403", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3038462, "valor_pagado": 85259576, "saldo_apartamento": 319685524, "estado": "En mora", "nombres": ["STEVEN DEVIA OSORNO"], "cedulas": ["1032470878"], "mora_detail": [], "total_cancelar_mora": null}], "1088298457": [{"apt": "1409", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1644221, "valor_pagado": 38153621, "saldo_apartamento": 182542379, "estado": "En mora", "nombres": ["VICTOR HUGO CORTES OSPINA", "ANDRES FELIPE CORTES OSPINA"], "cedulas": ["1088298457", "1088285531"], "mora_detail": [], "total_cancelar_mora": null}], "1088285531": [{"apt": "1409", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1644221, "valor_pagado": 38153621, "saldo_apartamento": 182542379, "estado": "En mora", "nombres": ["VICTOR HUGO CORTES OSPINA", "ANDRES FELIPE CORTES OSPINA"], "cedulas": ["1088298457", "1088285531"], "mora_detail": [], "total_cancelar_mora": null}], "1114824860": [{"apt": "1412", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 2457048, "valor_pagado": 33285240, "saldo_apartamento": 234234792, "estado": "Al Dia", "nombres": ["LUIS CARLOS CAJIAO DUARTE"], "cedulas": ["1114824860"], "mora_detail": [], "total_cancelar_mora": null}], "10130318": [{"apt": "1503", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2950207, "valor_pagado": 93755175, "saldo_apartamento": 334270825, "estado": "Al Dia", "nombres": ["RUBEN EDGAR VILLADA VALDERRAMA"], "cedulas": ["10130318"], "mora_detail": [], "total_cancelar_mora": null}], "1225093169": [{"apt": "1510", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1651652, "valor_pagado": 49794000, "saldo_apartamento": 176847000, "estado": "Al Dia", "nombres": ["Jose Nilton Garcia Herrera"], "cedulas": ["1225093169"], "mora_detail": [], "total_cancelar_mora": null}], "1093224717": [{"apt": "1601", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 6983337, "valor_pagado": 126600000, "saldo_apartamento": 379650000, "estado": "Al Dia", "nombres": ["Maria Alejandra Quiceno"], "cedulas": ["1093224717"], "mora_detail": [], "total_cancelar_mora": null}], "1088326082": [{"apt": "1603", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3007570.906, "valor_pagado": 68116827, "saldo_apartamento": 345828173, "estado": "En mora", "nombres": ["NICOLAS LLANOS BEDOYA"], "cedulas": ["1088326082"], "mora_detail": [], "total_cancelar_mora": null}], "664032987": [{"apt": "1701", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5310000, "valor_pagado": 26310000, "saldo_apartamento": 529690000, "estado": "En mora", "nombres": ["CHRISTIAN OMAR FIGUEROA BENITEZ"], "cedulas": ["664032987"], "mora_detail": [], "total_cancelar_mora": null}], "1088341258": [{"apt": "1702", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4571944, "valor_pagado": 105584000, "saldo_apartamento": 457335000, "estado": "Al Dia", "nombres": ["Brayan Stiven Bermudez Vargas"], "cedulas": ["1088341258"], "mora_detail": [], "total_cancelar_mora": null}], "1008009194": [{"apt": "1703", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3855838, "valor_pagado": 89828436, "saldo_apartamento": 398174564, "estado": "Al Dia", "nombres": ["Jessica Ivon Ospina Montoya"], "cedulas": ["1008009194"], "mora_detail": [], "total_cancelar_mora": null}], "4512515": [{"apt": "1704", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5282934, "valor_pagado": 134787550, "saldo_apartamento": 688015450, "estado": "En mora", "nombres": ["Ociel Geovanny Suarez Alzate"], "cedulas": ["4512515"], "mora_detail": [], "total_cancelar_mora": null}], "25194250": [{"apt": "1705", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2162447, "valor_pagado": 316280000, "saldo_apartamento": 26999000, "estado": "PAGADO AL 35%", "nombres": ["LUZ AMPARO RODRIGUEZ GUZMAN"], "cedulas": ["25194250"], "mora_detail": [], "total_cancelar_mora": null}], "1088025800": [{"apt": "1708", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3900000, "valor_pagado": 106000000, "saldo_apartamento": 406778770, "estado": "Al Dia", "nombres": ["JHON FREDY HOLGU\u00cdN GARC\u00cdA", "MAR\u00cdA FERNANDA HOLGU\u00cdN GARC\u00cdA"], "cedulas": ["1088025800", "1088032215"], "mora_detail": [], "total_cancelar_mora": null}], "1088032215": [{"apt": "1708", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3900000, "valor_pagado": 106000000, "saldo_apartamento": 406778770, "estado": "Al Dia", "nombres": ["JHON FREDY HOLGU\u00cdN GARC\u00cdA", "MAR\u00cdA FERNANDA HOLGU\u00cdN GARC\u00cdA"], "cedulas": ["1088025800", "1088032215"], "mora_detail": [], "total_cancelar_mora": null}], "24334658": [{"apt": "1711", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1428751, "valor_pagado": 37863616, "saldo_apartamento": 156036484, "estado": "Al Dia", "nombres": ["MARIA DEL PILAR MARTINEZ PATI\u00d1O"], "cedulas": ["24334658"], "mora_detail": [], "total_cancelar_mora": null}], "1088309445": [{"apt": "1710", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1687414, "valor_pagado": 32469766, "saldo_apartamento": 198769234, "estado": "CANCELADO", "nombres": ["Johonnatan Esteban Marin Betancourt", "Maryury Velasquez Duque"], "cedulas": ["1088309445", "1088277858"], "mora_detail": [], "total_cancelar_mora": null}], "1088277858": [{"apt": "1710", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1687414, "valor_pagado": 32469766, "saldo_apartamento": 198769234, "estado": "CANCELADO", "nombres": ["Johonnatan Esteban Marin Betancourt", "Maryury Velasquez Duque"], "cedulas": ["1088309445", "1088277858"], "mora_detail": [], "total_cancelar_mora": null}], "A18395528": [{"apt": "1712", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 3000000, "valor_pagado": 30000000, "saldo_apartamento": 295000000, "estado": "Al Dia", "nombres": ["JUAN RIVERA MALDONADO"], "cedulas": ["A18395528"], "mora_detail": [], "total_cancelar_mora": null}], "42134514": [{"apt": "1803", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3389021, "valor_pagado": 79558462, "saldo_apartamento": 370458538, "estado": "Al Dia", "nombres": ["ANGELICA MARIA FLORE VELASQUEZ"], "cedulas": ["42134514"], "mora_detail": [], "total_cancelar_mora": null}], "1090428097": [{"apt": "1804", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 8201511, "valor_pagado": 177822000, "saldo_apartamento": 613680000, "estado": "Al Dia", "nombres": ["JULIAN TRUJILLO LADINO"], "cedulas": ["1090428097"], "mora_detail": [], "total_cancelar_mora": null}], "1088277425": [{"apt": "1810", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1705296, "valor_pagado": 22049568, "saldo_apartamento": 211488432, "estado": "CANCELADO", "nombres": ["Gustavo Adolfo Orozco Salazar"], "cedulas": ["1088277425"], "mora_detail": [], "total_cancelar_mora": null}], "9736325": [{"apt": "1903", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 5360385, "valor_pagado": 47802125, "saldo_apartamento": 506635905, "estado": "Al Dia", "nombres": ["JULIAN MAURICIO GIRALDO MARTINEZ"], "cedulas": ["9736325"], "mora_detail": [], "total_cancelar_mora": null}], "1126003724": [{"apt": "1910", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1737954, "valor_pagado": 48448850, "saldo_apartamento": 189288150, "estado": "Al Dia", "nombres": ["Dalin Helen Espinosa Londo\u00f1o", "Jose Julian Cano Castro"], "cedulas": ["1126003724", "14571168"], "mora_detail": [], "total_cancelar_mora": null}], "14571168": [{"apt": "1910", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1737954, "valor_pagado": 48448850, "saldo_apartamento": 189288150, "estado": "Al Dia", "nombres": ["Dalin Helen Espinosa Londo\u00f1o", "Jose Julian Cano Castro"], "cedulas": ["1126003724", "14571168"], "mora_detail": [], "total_cancelar_mora": null}], "1088294496": [{"apt": "2002", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5253045, "valor_pagado": 101590000, "saldo_apartamento": 518758000, "estado": "Al Dia", "nombres": ["MAGDA LORENA PEREZ SAUCEA"], "cedulas": ["1088294496"], "mora_detail": [], "total_cancelar_mora": null}], "1088265628": [{"apt": "2003", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3615532, "valor_pagado": 77310640, "saldo_apartamento": 422489360, "estado": "2003.0", "nombres": ["YEISON GOMEZ GOMEZ"], "cedulas": ["1088265628"], "mora_detail": [], "total_cancelar_mora": null}], "1088319118": [{"apt": "2004", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5771583, "valor_pagado": 57400000, "saldo_apartamento": 633638000, "estado": "CANCELADO", "nombres": ["DANIELA GONZALEZ OCAMPO"], "cedulas": ["1088319118"], "mora_detail": [], "total_cancelar_mora": null}], "1088004712": [{"apt": "2012", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1720000, "valor_pagado": 37960000, "saldo_apartamento": 151540000, "estado": "Al Dia", "nombres": ["PAULA ANDREA FIGUEROA ECHEVERRY", "ADRIANA ECHEVERRY RAMIREZ"], "cedulas": ["1088004712", "42101016"], "mora_detail": [], "total_cancelar_mora": null}], "42101016": [{"apt": "2012", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1720000, "valor_pagado": 37960000, "saldo_apartamento": 151540000, "estado": "Al Dia", "nombres": ["PAULA ANDREA FIGUEROA ECHEVERRY", "ADRIANA ECHEVERRY RAMIREZ"], "cedulas": ["1088004712", "42101016"], "mora_detail": [], "total_cancelar_mora": null}], "51885154": [{"apt": "2104", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 5004393, "valor_pagado": 263215392, "saldo_apartamento": 590784608, "estado": "En mora", "nombres": ["ROBERTO JOSE STERLING", "BLANCA BOTERO GONZALEZ"], "cedulas": ["PASAPORTE 557909667", "51885154"], "mora_detail": [], "total_cancelar_mora": null}], "42012691": [{"apt": "2109", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2074009, "valor_pagado": 120300000, "saldo_apartamento": 120156000, "estado": "Al Dia", "nombres": ["Beatriz Elena Guevara"], "cedulas": ["42012691"], "mora_detail": [], "total_cancelar_mora": null}], "1126004025": [{"apt": "2110", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1807939, "valor_pagado": 52006414, "saldo_apartamento": 194728586, "estado": "Al Dia", "nombres": ["Dayma Hyana Espinosa Londo\u00f1o"], "cedulas": ["1126004025"], "mora_detail": [], "total_cancelar_mora": null}], "1088006526": [{"apt": "2202", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6002442, "valor_pagado": 147042000, "saldo_apartamento": 450016000, "estado": "Al Dia", "nombres": ["YULEIDI RAMIREZ MARIN", "JHON FREDY RAMIREZ VARGAS,"], "cedulas": ["1088006526", "18523094"], "mora_detail": [], "total_cancelar_mora": null}], "18523094": [{"apt": "2202", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6002442, "valor_pagado": 147042000, "saldo_apartamento": 450016000, "estado": "Al Dia", "nombres": ["YULEIDI RAMIREZ MARIN", "JHON FREDY RAMIREZ VARGAS,"], "cedulas": ["1088006526", "18523094"], "mora_detail": [], "total_cancelar_mora": null}], "1094961375": [{"apt": "2205", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2699436, "valor_pagado": 42100000, "saldo_apartamento": 329119600, "estado": "Al Dia", "nombres": ["NATALIA CARDONA PINZON", "MARIA GERALDINE BUITRAGO MU\u00d1OZ"], "cedulas": ["1094961375", "1094971066"], "mora_detail": [], "total_cancelar_mora": null}], "1094971066": [{"apt": "2205", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 2699436, "valor_pagado": 42100000, "saldo_apartamento": 329119600, "estado": "Al Dia", "nombres": ["NATALIA CARDONA PINZON", "MARIA GERALDINE BUITRAGO MU\u00d1OZ"], "cedulas": ["1094961375", "1094971066"], "mora_detail": [], "total_cancelar_mora": null}], "16945325": [{"apt": "2303", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6231134, "valor_pagado": 27231134, "saldo_apartamento": 653287928, "estado": "Al Dia", "nombres": ["JESUS ANDRES ORDO\u00d1EZ RESTREPO"], "cedulas": ["16945325"], "mora_detail": [], "total_cancelar_mora": null}], "75034940": [{"apt": "2307", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 3424303, "valor_pagado": 25549303, "saldo_apartamento": 438787697, "estado": "2307.0", "nombres": ["Julian Andres Casta\u00f1eda Arboleda"], "cedulas": ["75034940"], "mora_detail": [], "total_cancelar_mora": null}], "80779340": [{"apt": "2401", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4475974, "valor_pagado": 121314624, "saldo_apartamento": 468453476, "estado": "En mora", "nombres": ["DIEGO FERNANDO ARROYAVE RENDON"], "cedulas": ["80779340"], "mora_detail": [], "total_cancelar_mora": null}], "1004519544": [{"apt": "2402", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 6802285, "valor_pagado": 30000000, "saldo_apartamento": 659615040, "estado": "En mora", "nombres": ["YURANY GUTIERREZ RESTREPO"], "cedulas": ["1004519544"], "mora_detail": [], "total_cancelar_mora": null}], "9923002": [{"apt": "2403", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 4261905, "valor_pagado": 156776005, "saldo_apartamento": 264223995, "estado": "Al Dia", "nombres": ["JAIME AUGUSTO MARIN VALENCIA", "BRIGITTE SHARON MONTES CASTRO"], "cedulas": ["9923002", "1125999981"], "mora_detail": [], "total_cancelar_mora": null}], "1125999981": [{"apt": "2403", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 4261905, "valor_pagado": 156776005, "saldo_apartamento": 264223995, "estado": "Al Dia", "nombres": ["JAIME AUGUSTO MARIN VALENCIA", "BRIGITTE SHARON MONTES CASTRO"], "cedulas": ["9923002", "1125999981"], "mora_detail": [], "total_cancelar_mora": null}], "75103461": [{"apt": "2404", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 6660836.189, "valor_pagado": 54175726, "saldo_apartamento": 648124274, "estado": "N/A", "nombres": ["Mauricio Vasco Alzate"], "cedulas": ["75103461"], "mora_detail": [], "total_cancelar_mora": null}], "1097035460": [{"apt": "2502", "proyecto": "TORRE INTI", "plan": "LEASING", "valor_apt": null, "valor_cuota": 4720775, "valor_pagado": 106280419, "saldo_apartamento": 453190581, "estado": "Al Dia", "nombres": ["Diana Marcela Galindo Foronda"], "cedulas": ["1097035460"], "mora_detail": [], "total_cancelar_mora": null}], "1125783117": [{"apt": "2609", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1909881, "valor_pagado": 50995151, "saldo_apartamento": 203389849, "estado": "Al Dia", "nombres": ["Veronica Guarin Salazar"], "cedulas": ["1125783117"], "mora_detail": [], "total_cancelar_mora": null}], "32772572": [{"apt": "2709", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1975625, "valor_pagado": 54390000, "saldo_apartamento": 208260000, "estado": "En mora", "nombres": ["Rosalba Beatriz Diaz Gil", "Adolfo La Paz"], "cedulas": ["32772572", "pass 655384311"], "mora_detail": [], "total_cancelar_mora": null}], "42053011": [{"apt": "2804", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 5385071, "valor_pagado": 123495601, "saldo_apartamento": 583156399, "estado": "En mora", "nombres": ["LUZ FANNY ATEHORTUA OSPINA"], "cedulas": ["42053011"], "mora_detail": [], "total_cancelar_mora": null}], "1045685085": [{"apt": "2809", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1999481, "valor_pagado": 54998443, "saldo_apartamento": 210650557, "estado": "Al Dia", "nombres": ["Kelly del Carmen Medina Castilla", "Jeeksy Jose Fari\u00f1as Diaz"], "cedulas": ["1045685085", "1044623466"], "mora_detail": [], "total_cancelar_mora": null}], "1044623466": [{"apt": "2809", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 1999481, "valor_pagado": 54998443, "saldo_apartamento": 210650557, "estado": "Al Dia", "nombres": ["Kelly del Carmen Medina Castilla", "Jeeksy Jose Fari\u00f1as Diaz"], "cedulas": ["1045685085", "1044623466"], "mora_detail": [], "total_cancelar_mora": null}], "10120021": [{"apt": "2810", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 832474, "valor_pagado": 70812500, "saldo_apartamento": 181455500, "estado": "En mora", "nombres": ["JULIO CESAR PICO ZABALA"], "cedulas": ["10120021"], "mora_detail": [], "total_cancelar_mora": null}], "42106822": [{"apt": "2902", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4500244, "valor_pagado": 103078576, "saldo_apartamento": 532668424, "estado": "Al Dia", "nombres": ["LUZ ADRIANA CIFUENTES ALARCON"], "cedulas": ["42106822"], "mora_detail": [], "total_cancelar_mora": null}], "1088294230": [{"apt": "2904", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 4925261, "valor_pagado": 176000000, "saldo_apartamento": 530893000, "estado": "Al Dia", "nombres": ["YULY ANDREA VALENCIA FLOREZ"], "cedulas": ["1088294230"], "mora_detail": [], "total_cancelar_mora": null}], "18516637": [{"apt": "3310", "proyecto": "TORRE INTI", "plan": "TRADICIONAL", "valor_apt": null, "valor_cuota": 981547, "valor_pagado": 98000000, "saldo_apartamento": 285552700, "estado": "Al Dia", "nombres": ["JOSE JOVANI LONDO\u00d1O CARMONA"], "cedulas": ["18516637"], "mora_detail": [], "total_cancelar_mora": null}], "1122136652": [{"apt": "404", "proyecto": "MALI", "plan": "HIPOTECARIO", "valor_apt": null, "valor_cuota": null, "valor_pagado": 169999454, "saldo_apartamento": 127991536, "estado": "AL DIA", "nombres": ["NATALIA MILADY RODRIGUEZ PADILLA"], "cedulas": ["1122136652"], "mora_detail": [], "total_cancelar_mora": null}]};
+
+// ═══════════ HELPERS ═══════════
+const co = n => n == null ? null : '$\u00a0' + Math.abs(Math.round(n)).toLocaleString('es-CO');
+const pct = n => n == null ? 'N/D' : (n * 100).toFixed(4) + '%';
+const isMora = s => s && (s.toLowerCase().includes('mora') || s.toLowerCase() === 'en mora');
+const isAlDia = s => s && (s.toLowerCase().includes('al dia') || s.toLowerCase() === 'al dia' || s.toLowerCase() === 'al día');
+const primerNombre = n => { const p = n.split(' ')[0]; return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); };
+
+function estadoTag(e) {
+  if (!e || e === 'N/A' || /^\d+\.\d+$/.test(e)) return `<span class="tag tag-na"><span class="dot"></span>Sin información</span>`;
+  if (isMora(e)) return `<span class="tag tag-mora"><span class="dot"></span>EN MORA</span>`;
+  if (isAlDia(e)) return `<span class="tag tag-aldia"><span class="dot"></span>AL DÍA</span>`;
+  if (e.toUpperCase().includes('PAGADO')) return `<span class="tag tag-pagado"><span class="dot"></span>${e}</span>`;
+  return `<span class="tag tag-na"><span class="dot"></span>${e}</span>`;
+}
+
+// ═══════════ NAVIGATION ═══════════
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  else document.querySelectorAll('.nav-tab').forEach(t => { if (t.textContent.toLowerCase().includes(id.slice(0,4))) t.classList.add('active'); });
+}
+
+// ═══════════ DASHBOARD ═══════════
+const MORA_UNIQUE = [];
+const seenApt = new Set();
+let aldiaCount = 0;
+
+for (const [ced, apts] of Object.entries(DATA)) {
+  for (const apt of apts) {
+    const key = apt.apt + '|' + apt.proyecto;
+    if (isMora(apt.estado) && !seenApt.has(key)) {
+      seenApt.add(key);
+      MORA_UNIQUE.push({cedula: ced, ...apt});
+    }
+  }
+}
+// count unique al dia apts
+const seenAlDia = new Set();
+for (const apts of Object.values(DATA)) {
+  for (const apt of apts) {
+    const key = apt.apt + '|' + apt.proyecto;
+    if (isAlDia(apt.estado) && !seenAlDia.has(key)) { seenAlDia.add(key); aldiaCount++; }
+  }
+}
+
+document.getElementById('dash-mora-count').textContent = MORA_UNIQUE.length;
+document.getElementById('dash-aldia-count').textContent = aldiaCount;
+document.getElementById('dash-mora-badge').textContent = MORA_UNIQUE.length + ' apartamentos';
+
+document.getElementById('mora-tbody').innerHTML = MORA_UNIQUE.map(c => {
+  const tc = c.total_cancelar_mora;
+  const tcHtml = tc ? `<strong style="color:var(--mora)">${co(tc)}</strong>` : `<span style="color:var(--muted);font-style:italic">Ver detalle</span>`;
+  return `<tr>
+    <td><div style="font-weight:500">${c.nombres.join(' / ')}</div><div style="font-size:0.72rem;color:var(--muted)">CC: ${c.cedula}</div></td>
+    <td><strong>Apto ${c.apt}</strong></td>
+    <td style="font-size:0.82rem;color:var(--muted)">${c.proyecto}</td>
+    <td style="font-size:0.82rem">${c.plan}</td>
+    <td>${c.valor_cuota ? co(c.valor_cuota) : '<span style="color:var(--muted)">N/D</span>'}</td>
+    <td>${c.valor_pagado ? co(c.valor_pagado) : '<span style="color:var(--muted)">N/D</span>'}</td>
+    <td>${c.saldo_apartamento != null ? co(c.saldo_apartamento) : '<span style="color:var(--muted)">N/D</span>'}</td>
+    <td>${tcHtml}</td>
+    <td style="white-space:nowrap">
+      <button class="btn-wa" onclick="openMsgModal('${c.cedula}','mora')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>WhatsApp</button>
+      <button class="btn-sm" onclick="openMsgModal('${c.cedula}','acuerdo')">🤝 Acuerdo</button>
+    </td>
+  </tr>`;
+}).join('');
+
+// ═══════════ BUSCADOR ═══════════
+function renderAptBlock(apt, idx, totalApts, cedula) {
+  const esMora = isMora(apt.estado);
+  const hasDetail = apt.mora_detail && apt.mora_detail.length > 0;
+  const hasTotal = apt.total_cancelar_mora != null;
+
+  const moraSection = esMora ? `
+    <div class="mora-section">
+      <div class="mora-section-title">🔴 Detalle de Mora — Apto ${apt.apt}</div>
+      ${hasDetail ? `
+      <div class="mora-table-wrap">
+        <table class="mora-table-inner">
+          <thead><tr><th>Vencimiento</th><th>Cuota</th><th>Días Mora</th><th>Intereses</th><th>Gastos Admin.</th><th>Valor a Cancelar</th></tr></thead>
+          <tbody>
+            ${apt.mora_detail.filter(m => m.cuota && m.cuota > 0 && m.intereses && m.gastos != null).map(m => `
+              <tr>
+                <td>${m.fecha_venc || '—'}</td>
+                <td style="color:var(--mora)">${co(m.cuota)}</td>
+                <td>${m.dias != null ? m.dias + ' días' : '—'}</td>
+                <td style="color:#ff8c42">${co(m.intereses)}</td>
+                <td style="color:#ff8c42">${co(m.gastos)}</td>
+                <td><strong style="color:var(--mora)">${typeof m.valor_cancelar === 'number' ? co(m.valor_cancelar) : '—'}</strong></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : `<div style="padding:12px 22px 16px;font-size:0.84rem;color:var(--muted)">Sin detalle de cuotas disponible en este archivo.</div>`}
+      ${hasTotal ? `<div class="mora-total-row"><span class="mora-total-label">🔴 Total a Cancelar (mora)</span><span class="mora-total-val">${co(apt.total_cancelar_mora)}</span></div>` : ''}
+    </div>` : '';
+
+  const aptBadge = totalApts > 1 ? `<span style="font-size:0.75rem;color:var(--muted);background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.15);border-radius:20px;padding:2px 10px;margin-left:10px">${idx+1} de ${totalApts}</span>` : '';
+
+  return `
+  <div class="apt-block">
+    <div class="apt-label">
+      <div class="apt-label-left">Apto ${apt.apt} ${aptBadge}</div>
+      <div class="apt-label-right">${apt.proyecto} · Plan ${apt.plan}</div>
+    </div>
+    <div class="field-grid">
+      <div class="field"><div class="field-label">Nombre</div><div class="field-value">${apt.nombres.join(' / ')}</div></div>
+      <div class="field"><div class="field-label">Proyecto</div><div class="field-value">${apt.proyecto}</div></div>
+      <div class="field"><div class="field-label">Plan</div><div class="field-value">${apt.plan || 'N/D'}</div></div>
+      <div class="field"><div class="field-label">Valor Cuota Mensual</div><div class="field-value ${apt.valor_cuota ? 'money' : 'na'}">${apt.valor_cuota ? co(apt.valor_cuota) : 'No disponible'}</div></div>
+      <div class="field"><div class="field-label">Valor Pagado</div><div class="field-value ${apt.valor_pagado ? 'money green' : 'na'}">${apt.valor_pagado ? co(apt.valor_pagado) : 'No disponible'}</div></div>
+      <div class="field"><div class="field-label">Saldo a Pagar Apartamento</div><div class="field-value ${apt.saldo_apartamento != null ? (apt.saldo_apartamento < 0 ? 'money green' : 'money') : 'na'}">${apt.saldo_apartamento != null ? co(apt.saldo_apartamento) : 'No disponible'}</div></div>
+      <div class="field full3"><div class="field-label">Estado Cartera</div><div class="field-value" style="margin-top:2px">${estadoTag(apt.estado)}</div></div>
+    </div>
+    ${moraSection}
+    ${esMora ? `<div class="card-actions">
+      <button class="btn-wa" onclick="openMsgModal('${cedula}','mora')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>Enviar aviso de mora</button>
+      <button class="btn-sm" onclick="openMsgModal('${cedula}','acuerdo')">🤝 Proponer acuerdo</button>
+    </div>` : ''}
+  </div>`;
+}
+
+function renderSearch(cedula) {
+  cedula = cedula.trim();
+  const res = document.getElementById('search-result');
+  if (!cedula) { res.innerHTML = ''; return; }
+  const apts = DATA[cedula];
+  if (!apts) {
+    res.innerHTML = `<div style="text-align:center;padding:48px;color:var(--muted)"><div style="font-size:2.5rem;margin-bottom:12px">🔍</div><p>No se encontró ningún cliente con esa cédula</p><small style="opacity:0.7;display:block;margin-top:6px">Verifique el número ingresado</small></div>`; return;
+  }
+
+  const allNombres = [...new Set(apts.flatMap(a => a.nombres))];
+  const allCedulas = [...new Set(apts.flatMap(a => a.cedulas))];
+  const hasMulti = apts.length > 1;
+  const anyMora = apts.some(a => isMora(a.estado));
+
+  const cotitBadge = allCedulas.length > 1 ? `<div class="cotit-badge">👥 Co-titulares: ${allCedulas.join(' · ')}</div>` : '';
+  const multiAptBadge = hasMulti ? `<div style="margin-top:8px;display:inline-flex;align-items:center;gap:5px;background:rgba(91,142,230,0.1);border:1px solid rgba(91,142,230,0.25);border-radius:20px;padding:3px 10px;font-size:0.7rem;color:var(--pagado);letter-spacing:1px;text-transform:uppercase">🏢 ${apts.length} Apartamentos</div>` : '';
+
+  res.innerHTML = `
+  <div class="client-card">
+    <div class="card-header ${anyMora ? 'mora-header' : ''}">
+      <div class="client-name">${allNombres.join(' <span style="color:var(--accent);font-size:1rem;margin:0 8px">/</span> ')}</div>
+      ${cotitBadge}${multiAptBadge}
+    </div>
+    ${apts.map((apt, i) => renderAptBlock(apt, i, apts.length, cedula)).join('')}
+  </div>`;
+}
+
+const inp = document.getElementById('cedula-input');
+const clrBtn = document.getElementById('clear-btn');
+inp.addEventListener('input', () => {
+  clrBtn.style.display = inp.value ? 'block' : 'none';
+  renderSearch(inp.value);
+});
+clrBtn.addEventListener('click', () => { inp.value = ''; clrBtn.style.display = 'none'; document.getElementById('search-result').innerHTML = ''; inp.focus(); });
+
+// ═══════════ MENSAJES ═══════════
+document.getElementById('msg-fecha').value = new Date().toISOString().split('T')[0];
+document.getElementById('g-fecha').value = new Date().toISOString().split('T')[0];
+
+function autoFillMsg() {
+  const ced = document.getElementById('msg-cedula').value.trim();
+  // just trigger update when cedula found
+}
+
+function buildMsg(cedula, tipo, fecha) {
+  const apts = DATA[cedula];
+  if (!apts || !apts.length) return null;
+  const apt = apts.find(a => isMora(a.estado)) || apts[0];
+  const nombre = primerNombre(apt.nombres[0]);
+  const aptNum = `Apto ${apt.apt}`;
+  const proyecto = apt.proyecto;
+  const cuota = apt.valor_cuota ? co(apt.valor_cuota) : '[VALOR CUOTA]';
+  const total = apt.total_cancelar_mora ? co(apt.total_cancelar_mora) : '[TOTAL MORA]';
+  const fechaFmt = fecha ? new Date(fecha + 'T12:00:00').toLocaleDateString('es-CO', {day:'numeric',month:'long',year:'numeric'}) : '[FECHA]';
+  const msgs = {
+    recordatorio: `Hola ${nombre} 👋\n\nLe recordamos que su cuota del ${aptNum} — ${proyecto} vence el ${fechaFmt}.\n\n💰 Valor: ${cuota}\n\nGracias por su puntualidad.\n🏗️ Damur Constructora`,
+    vencimiento: `Hola ${nombre} ⚠️\n\nHoy vence su cuota del ${aptNum} — ${proyecto}.\n\n💰 Valor: ${cuota}\n\nDespués del vencimiento aplica tasa moratoria. Evite cobros adicionales pagando hoy.\n\n🏗️ Damur Constructora`,
+    mora: `Estimado(a) ${nombre},\n\nSu cuenta del ${aptNum} — ${proyecto} presenta un saldo vencido de ${total}.\n\n⚠️ Este valor incluye cuotas pendientes + intereses + gastos administrativos.\n\nLe pedimos comunicarse con nosotros a la brevedad.\n\n📞 Damur Constructora`,
+    acuerdo: `Estimado(a) ${nombre},\n\nEntendemos que pueden presentarse dificultades. Queremos ofrecerle la posibilidad de un acuerdo de pago para el ${aptNum} — ${proyecto}.\n\n📅 Fecha de pago\n💳 Forma de pago\n📋 Plan de abono\n\nContáctenos para coordinar.\n🏗️ Damur Constructora`
+  };
+  return msgs[tipo] || msgs.mora;
+}
+
+function generateMsg() {
+  const ced = document.getElementById('msg-cedula').value.trim();
+  const tipo = document.getElementById('msg-tipo').value;
+  const fecha = document.getElementById('msg-fecha').value;
+  const msg = buildMsg(ced, tipo, fecha);
+  const res = document.getElementById('gen-result');
+  const acts = document.getElementById('gen-actions');
+  if (!msg) { res.style.display = 'block'; res.textContent = '⚠️ Cédula no encontrada.'; acts.style.display = 'none'; return; }
+  res.style.display = 'block'; acts.style.display = 'flex'; res.textContent = msg;
+}
+
+function sendWA() { const m = document.getElementById('gen-result').textContent; if (m) window.open('https://wa.me/?text=' + encodeURIComponent(m), '_blank'); }
+function copyGen() { copy(document.getElementById('gen-result').textContent, document.getElementById('btn-copy-gen')); }
+function copyPlantilla(btn) { copy(btn.closest('.msg-card').querySelector('.msg-body').textContent, btn); }
+
+function copy(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent; btn.textContent = '✅ Copiado'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ═══════════ MODAL ═══════════
+let _modalMsg = '';
+function openMsgModal(cedula, tipo) {
+  _modalMsg = buildMsg(cedula, tipo, new Date().toISOString().split('T')[0]) || '';
+  const apts = DATA[cedula] || [{}];
+  const apt = apts.find(a => isMora(a.estado)) || apts[0];
+  const tMap = {recordatorio:'Recordatorio',vencimiento:'Día del Vencimiento',mora:'Aviso de Mora',acuerdo:'Propuesta de Acuerdo'};
+  document.getElementById('modal-title').textContent = tMap[tipo] || 'Mensaje';
+  document.getElementById('modal-sub').textContent = apt.nombres ? apt.nombres.join(' / ') + ' · Apto ' + apt.apt : '';
+  document.getElementById('modal-msg').textContent = _modalMsg;
+  document.getElementById('modal-wa-btn').onclick = () => window.open('https://wa.me/?text=' + encodeURIComponent(_modalMsg), '_blank');
+  document.getElementById('modal-copy-btn').onclick = () => copy(_modalMsg, document.getElementById('modal-copy-btn'));
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+// ═══════════ GESTIONES ═══════════
+let gestiones = [];
+try { gestiones = JSON.parse(localStorage.getItem('damur_gestiones_v2') || '[]'); } catch(e) {}
+
+function autoFillGest() {
+  const ced = document.getElementById('g-cedula').value.trim();
+  const apts = DATA[ced];
+  if (apts) {
+    const apt = apts.find(a => isMora(a.estado)) || apts[0];
+    document.getElementById('g-nombre').value = apt.nombres.join(' / ');
+    document.getElementById('g-apt').value = 'Apto ' + apt.apt;
+    document.getElementById('g-proyecto').value = apt.proyecto;
+  } else {
+    document.getElementById('g-nombre').value = '';
+    document.getElementById('g-apt').value = '';
+    document.getElementById('g-proyecto').value = '';
+  }
+}
+
+function saveGestion() {
+  const ced = document.getElementById('g-cedula').value.trim();
+  if (!ced) { alert('Ingresa la cédula del cliente.'); return; }
+  const g = {
+    id: Date.now(), fecha: document.getElementById('g-fecha').value, cedula: ced,
+    nombre: document.getElementById('g-nombre').value,
+    apt: document.getElementById('g-apt').value,
+    proyecto: document.getElementById('g-proyecto').value,
+    canal: document.getElementById('g-canal').value,
+    respuesta: document.getElementById('g-respuesta').value,
+    fechaPago: document.getElementById('g-fecha-pago').value,
+    cumplio: document.getElementById('g-cumplio').value,
+    obs: document.getElementById('g-obs').value.trim()
+  };
+  gestiones.unshift(g);
+  try { localStorage.setItem('damur_gestiones_v2', JSON.stringify(gestiones)); } catch(e) {}
+  renderGestiones();
+  ['g-cedula','g-nombre','g-apt','g-proyecto','g-fecha-pago','g-obs'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('g-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('g-cumplio').value = '-';
+}
+
+function deleteGestion(id) {
+  if (!confirm('¿Eliminar esta gestión?')) return;
+  gestiones = gestiones.filter(g => g.id !== id);
+  try { localStorage.setItem('damur_gestiones_v2', JSON.stringify(gestiones)); } catch(e) {}
+  renderGestiones();
+}
+
+const canalHTML = {whatsapp:'<span class="canal-badge canal-wa">📱 WhatsApp</span>',llamada:'<span class="canal-badge canal-call">📞 Llamada</span>',email:'<span class="canal-badge canal-email">✉️ Correo</span>',visita:'<span class="canal-badge canal-visita">🏠 Visita</span>'};
+const respHTML = {si:'<span class="resp-si">✅ Sí</span>',no:'<span class="resp-no">❌ No</span>',pendiente:'<span class="resp-pend">⏳ Pendiente</span>'};
+
+function renderGestiones() {
+  const tb = document.getElementById('gest-tbody');
+  if (!gestiones.length) { tb.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted);font-size:0.88rem">No hay gestiones registradas aún.</td></tr>`; return; }
+  tb.innerHTML = gestiones.map(g => `<tr>
+    <td style="white-space:nowrap;font-size:0.82rem">${g.fecha||'—'}</td>
+    <td><div style="font-weight:500;font-size:0.85rem">${g.nombre||g.cedula}</div><div style="font-size:0.7rem;color:var(--muted)">CC: ${g.cedula}</div></td>
+    <td style="font-size:0.83rem">${g.apt||'—'}</td>
+    <td>${canalHTML[g.canal]||g.canal}</td>
+    <td>${respHTML[g.respuesta]||g.respuesta}</td>
+    <td style="font-size:0.82rem">${g.fechaPago||'—'}</td>
+    <td style="font-size:0.83rem">${g.cumplio==='-'?'—':g.cumplio==='si'?'✅ Sí':'❌ No'}</td>
+    <td style="font-size:0.81rem;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${g.obs}">${g.obs||'—'}</td>
+    <td><button class="btn-del" onclick="deleteGestion(${g.id})">🗑</button></td>
+  </tr>`).join('');
+}
+renderGestiones();
+
+function exportGestiones() {
+  if (!gestiones.length) { alert('No hay gestiones.'); return; }
+  const h = ['Fecha','Cédula','Cliente','Apt','Proyecto','Canal','Respondió','Fecha Pago','Cumplió','Observaciones'];
+  const rows = gestiones.map(g => [g.fecha,g.cedula,g.nombre,g.apt,g.proyecto,g.canal,g.respuesta,g.fechaPago,g.cumplio,g.obs].map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(','));
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF' + [h.join(','),...rows].join('\n'));
+  a.download = 'gestiones_damur.csv'; a.click();
+}
+</script>
+</body>
+</html>
